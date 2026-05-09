@@ -1,9 +1,19 @@
 /**
- * Typed API client — reads NEXT_PUBLIC_API_URL at runtime.
- * Falls back to http://localhost:8000 for local development.
+ * Typed API client.
+ *
+ * Server components (SSR/RSC) call the Render backend directly via
+ * NEXT_PUBLIC_API_URL (always available at runtime on the server).
+ *
+ * Client components call /api/backend/... which is a Next.js proxy route
+ * on the same Vercel domain — no CORS, no env-var baking required.
  */
 
-const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+const BASE =
+  typeof window === "undefined"
+    ? // Server: read env var at runtime (always works on Vercel/Render)
+      (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000")
+    : // Client: use the local proxy so CORS / env-baking is never an issue
+      "/api/backend";
 
 // ---- shared types -------------------------------------------------------
 
