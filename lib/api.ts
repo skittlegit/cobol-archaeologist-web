@@ -78,6 +78,8 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
     headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },
     // Disable Next.js caching for API calls so data is always fresh
     cache: "no-store",
+    // 15 s timeout — handles Render free-tier cold starts gracefully
+    signal: AbortSignal.timeout(15000),
   });
   if (!res.ok) {
     const text = await res.text().catch(() => res.statusText);
