@@ -2,15 +2,15 @@ import { api, Stats } from "@/lib/api";
 import Link from "next/link";
 
 const LABEL_META: Record<string, { hue: string; gloss: string }> = {
-  balance_check:          { hue: "#1f4a6b", gloss: "Verifies funds before debit." },
+  balance_check:          { hue: "#1f3a52", gloss: "Verifies funds before debit." },
   late_fee:               { hue: "#8a5a00", gloss: "Penalises overdue obligations." },
-  kyc_screening:          { hue: "#5a1f0a", gloss: "Identifies the customer." },
-  interest_calculation:   { hue: "#2f5d3a", gloss: "Accrues time-value of money." },
+  kyc_screening:          { hue: "#5a2a4d", gloss: "Identifies the customer." },
+  interest_calculation:   { hue: "#1f4d3a", gloss: "Accrues time-value of money." },
   loan_eligibility:       { hue: "#6b4f00", gloss: "Decides who may borrow." },
   transaction_validation: { hue: "#7a1d1d", gloss: "Guards the ledger from bad input." },
-  fraud_check:            { hue: "#9a3412", gloss: "Flags unusual behaviour." },
+  fraud_check:            { hue: "#b8593e", gloss: "Flags unusual behaviour." },
   payroll:                { hue: "#1f5d5a", gloss: "Pays the people." },
-  unlabeled:              { hue: "#9a9384", gloss: "Awaiting classification." },
+  unlabeled:              { hue: "#a39b8e", gloss: "Awaiting classification." },
 };
 
 function meta(l: string) {
@@ -33,14 +33,13 @@ export default async function Home() {
       {/* ----- Masthead ----- */}
       <section className="relative">
         <div className="flex items-center gap-3 text-ink-3">
-          <span className="eyebrow">Vol. I · Issue 01</span>
+          <span className="eyebrow">A research interface</span>
           <span className="h-px flex-1 bg-rule" />
-          <span className="eyebrow">Mainframe Banking · India</span>
+          <span className="eyebrow">Banking · COBOL · Regulation</span>
         </div>
 
-        <h1 className="font-display mt-6 text-[clamp(2.75rem,7vw,5.5rem)] leading-[0.95] font-medium">
-          The business intent
-          <br />
+        <h1 className="font-display mt-8 text-[clamp(2.75rem,7vw,5.5rem)] leading-[0.95] font-normal">
+          The business intent<br />
           <span className="italic text-accent">hidden in legacy code.</span>
         </h1>
 
@@ -191,14 +190,14 @@ export default async function Home() {
           </section>
 
           {/* ----- Pull quote ----- */}
-          <section className="relative py-10 px-2 sm:px-10 border-y border-rule">
-            <span aria-hidden className="absolute -top-6 left-6 font-display text-9xl leading-none text-accent/25 select-none">“</span>
-            <blockquote className="font-display text-2xl md:text-3xl leading-snug max-w-3xl text-ink-2">
+          <section className="relative py-12 px-2 sm:px-12 border-y border-rule">
+            <span aria-hidden className="absolute -top-4 left-4 font-display text-[10rem] leading-none text-accent/20 select-none">“</span>
+            <blockquote className="font-display text-2xl md:text-[2rem] leading-snug max-w-3xl text-ink-2 relative">
               Every <em>IF</em> in a fifty-year-old paragraph was once a
-              regulatory clause, a customer complaint, or a 2 a.m. patch
+              regulatory clause, a customer complaint, or a midnight patch
               someone signed off on a fax.
             </blockquote>
-            <p className="eyebrow mt-6">— from the foreword</p>
+            <p className="eyebrow mt-6">— Editorial note</p>
           </section>
 
           {/* ----- Method ----- */}

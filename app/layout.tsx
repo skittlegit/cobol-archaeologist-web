@@ -1,26 +1,27 @@
 import type { Metadata } from "next";
-import { Fraunces, IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
+import { Source_Serif_4, Manrope, JetBrains_Mono } from "next/font/google";
 import Link from "next/link";
 import "./globals.css";
 
-const fraunces = Fraunces({
-  variable: "--font-fraunces",
+const sourceSerif = Source_Serif_4({
+  variable: "--font-source-serif",
   subsets: ["latin"],
-  display: "swap",
-  axes: ["SOFT", "opsz"],
-});
-
-const plexSans = IBM_Plex_Sans({
-  variable: "--font-plex-sans",
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600"],
+  weight: ["400", "500", "600"],
+  style: ["normal", "italic"],
   display: "swap",
 });
 
-const plexMono = IBM_Plex_Mono({
-  variable: "--font-plex-mono",
+const manrope = Manrope({
+  variable: "--font-manrope",
   subsets: ["latin"],
-  weight: ["300", "400", "500"],
+  weight: ["300", "400", "500", "600", "700"],
+  display: "swap",
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-jetbrains-mono",
+  subsets: ["latin"],
+  weight: ["400", "500"],
   display: "swap",
 });
 
@@ -38,7 +39,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${fraunces.variable} ${plexSans.variable} ${plexMono.variable} h-full`}
+      className={`${sourceSerif.variable} ${manrope.variable} ${jetbrainsMono.variable} h-full`}
     >
       <body className="min-h-full flex flex-col">
         <header className="sticky top-0 z-20 border-b border-rule bg-paper/85 backdrop-blur-md">
@@ -46,15 +47,15 @@ export default function RootLayout({
             <Link href="/" className="group flex items-center gap-3">
               <span
                 aria-hidden
-                className="grid h-8 w-8 place-items-center rounded-sm border border-rule-strong bg-card text-accent font-display text-lg leading-none transition-transform group-hover:-rotate-6"
+                className="grid h-8 w-8 place-items-center rounded-sm bg-ink text-paper font-display text-[15px] leading-none transition-transform group-hover:scale-105"
               >
-                ¶
+                CA
               </span>
               <span className="flex flex-col leading-none">
-                <span className="font-display text-[15px] font-medium">
+                <span className="font-display text-[15px] font-medium tracking-tight">
                   COBOL Archaeologist
                 </span>
-                <span className="eyebrow mt-1 text-[10px]">Field Notebook · 1959→</span>
+                <span className="eyebrow mt-1 text-[10px]">Legacy Intent · Banking</span>
               </span>
             </Link>
 
@@ -94,16 +95,18 @@ export default function RootLayout({
         </main>
 
         <footer className="mt-24 border-t border-rule bg-paper-2/60">
-          <div className="mx-auto max-w-7xl px-6 lg:px-10 py-10 grid gap-8 md:grid-cols-3 text-sm">
-            <div>
-              <p className="eyebrow mb-3">Colophon</p>
-              <p className="text-ink-2 leading-relaxed">
-                Set in <span className="font-display italic">Fraunces</span>,
-                IBM Plex Sans, and IBM Plex Mono. An archival reading-room for
-                programs nobody remembers writing.
+          <div className="mx-auto max-w-7xl px-6 lg:px-10 py-12 grid gap-10 md:grid-cols-12 text-sm">
+            <div className="md:col-span-5">
+              <p className="font-display text-2xl leading-tight">
+                Recovering the rules <em>encoded</em> in fifty years of banking software.
+              </p>
+              <p className="mt-4 text-ink-3 text-[13px] leading-relaxed max-w-md">
+                A research interface that treats undocumented COBOL programs
+                as primary sources — extracting logic, inferring intent, and
+                citing the regulations that shaped each decision.
               </p>
             </div>
-            <div>
+            <div className="md:col-span-3">
               <p className="eyebrow mb-3">Sections</p>
               <ul className="space-y-1.5">
                 <li><Link className="link text-ink-2 hover:text-ink" href="/">Overview</Link></li>
@@ -111,18 +114,19 @@ export default function RootLayout({
                 <li><Link className="link text-ink-2 hover:text-ink" href="/search">Regulation Search</Link></li>
               </ul>
             </div>
-            <div>
-              <p className="eyebrow mb-3">Caveat lector</p>
-              <p className="text-ink-3 leading-relaxed">
+            <div className="md:col-span-4">
+              <p className="eyebrow mb-3">Methodology</p>
+              <p className="text-ink-3 leading-relaxed text-[13px]">
+                Static parse → weak supervision → LLM-assisted intent inference.
                 Inferred intent is a hypothesis, not a specification. Always
-                cross-check against source code and primary regulation.
+                verify against source code and primary regulation.
               </p>
             </div>
           </div>
           <div className="border-t border-rule">
-            <div className="mx-auto max-w-7xl px-6 lg:px-10 py-4 flex flex-wrap items-center justify-between gap-3 text-xs text-ink-4">
-              <span>© {new Date().getFullYear()} COBOL Archaeologist</span>
-              <span className="font-mono">v0.1 · built for legacy systems</span>
+            <div className="mx-auto max-w-7xl px-6 lg:px-10 py-4 flex flex-wrap items-center justify-between gap-3 text-[11px] text-ink-4">
+              <span className="num">© {new Date().getFullYear()} COBOL Archaeologist · All rights reserved</span>
+              <span className="font-mono">v0.1 · for legacy systems research</span>
             </div>
           </div>
         </footer>

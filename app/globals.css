@@ -6,33 +6,33 @@
 ---------------------------------------------------------------- */
 
 :root {
-  /* surfaces */
-  --paper:        #f6f2ea;
-  --paper-2:      #efe9dc;
+  /* surfaces — warm off-white, calibrated for long reading */
+  --paper:        #f5f2ec;
+  --paper-2:      #ece7dd;
   --card:         #ffffff;
-  --rule:         #e3dccb;
-  --rule-strong:  #c9bfa6;
+  --rule:         #ddd6c7;
+  --rule-strong:  #b8ae99;
 
-  /* ink */
-  --ink:          #14110d;
-  --ink-2:        #3b362d;
-  --ink-3:        #6b6557;
-  --ink-4:        #9a9384;
+  /* ink — warm near-black, never pure */
+  --ink:          #1a1816;
+  --ink-2:        #3d3934;
+  --ink-3:        #6e665c;
+  --ink-4:        #a39b8e;
 
-  /* accent — oxidized copper / ledger red */
-  --accent:       #9a3412;
-  --accent-soft:  #f3e3d3;
-  --accent-ink:   #5a1f0a;
+  /* accent — deep forest. Restrained, archival, financial-grade. */
+  --accent:       #1f4d3a;
+  --accent-soft:  #dce5df;
+  --accent-ink:   #143027;
 
-  /* semantic */
-  --ok:           #2f5d3a;
-  --ok-soft:      #e2ecdf;
+  /* semantic — muted, library-card palette */
+  --ok:           #1f4d3a;
+  --ok-soft:      #dce5df;
   --warn:         #8a5a00;
-  --warn-soft:    #f4e8cc;
+  --warn-soft:    #f0e6cf;
   --bad:          #7a1d1d;
-  --bad-soft:     #f1d9d4;
-  --info:         #1f4a6b;
-  --info-soft:    #dde7ee;
+  --bad-soft:     #ecd9d4;
+  --info:         #1f3a52;
+  --info-soft:    #d8e0e8;
 }
 
 @theme inline {
@@ -49,9 +49,9 @@
   --color-accent-soft:  var(--accent-soft);
   --color-accent-ink:   var(--accent-ink);
 
-  --font-display: var(--font-fraunces);
-  --font-sans:    var(--font-plex-sans);
-  --font-mono:    var(--font-plex-mono);
+  --font-display: var(--font-source-serif);
+  --font-sans:    var(--font-manrope);
+  --font-mono:    var(--font-jetbrains-mono);
 }
 
 html, body {
@@ -60,31 +60,32 @@ html, body {
 }
 
 body {
-  font-family: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-manrope), ui-sans-serif, system-ui, -apple-system, sans-serif;
   font-feature-settings: "ss01", "cv11";
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   background-image:
-    radial-gradient(1200px 600px at 80% -10%, rgba(154, 52, 18, 0.05), transparent 60%),
-    radial-gradient(900px 500px at -10% 20%, rgba(20, 17, 13, 0.035), transparent 60%);
+    radial-gradient(1200px 600px at 80% -10%, rgba(31, 77, 58, 0.04), transparent 60%),
+    radial-gradient(900px 500px at -10% 20%, rgba(26, 24, 22, 0.03), transparent 60%);
   background-attachment: fixed;
 }
 
 ::selection { background: var(--accent); color: var(--paper); }
 
 .font-display {
-  font-family: var(--font-fraunces), ui-serif, Georgia, serif;
+  font-family: var(--font-source-serif), ui-serif, Georgia, "Times New Roman", serif;
   font-optical-sizing: auto;
-  font-variation-settings: "SOFT" 30, "WONK" 0;
-  letter-spacing: -0.022em;
+  letter-spacing: -0.018em;
+  font-weight: 400;
 }
 
 .eyebrow {
-  font-family: var(--font-plex-mono), ui-monospace, monospace;
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
   font-size: 0.6875rem;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--ink-3);
+  font-weight: 500;
 }
 
 .num {

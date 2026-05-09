@@ -17,13 +17,13 @@ const LABELS = [
 ];
 
 const LABEL_HUE: Record<string, string> = {
-  balance_check: "#1f4a6b",
+  balance_check: "#1f3a52",
   late_fee: "#8a5a00",
-  kyc_screening: "#5a1f0a",
-  interest_calculation: "#2f5d3a",
+  kyc_screening: "#5a2a4d",
+  interest_calculation: "#1f4d3a",
   loan_eligibility: "#6b4f00",
   transaction_validation: "#7a1d1d",
-  fraud_check: "#9a3412",
+  fraud_check: "#b8593e",
   payroll: "#1f5d5a",
 };
 

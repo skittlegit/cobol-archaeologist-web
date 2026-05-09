@@ -170,7 +170,7 @@ export default function SearchPage() {
                   </aside>
 
                   <div className="lg:col-span-9">
-                    <p className="font-display text-lg leading-relaxed text-ink-2 first-letter:font-display first-letter:text-5xl first-letter:float-left first-letter:mr-2 first-letter:mt-1 first-letter:leading-none first-letter:text-accent">
+                    <p className="font-display text-[1.0625rem] leading-relaxed text-ink-2">
                       {hit.text}
                     </p>
                   </div>
