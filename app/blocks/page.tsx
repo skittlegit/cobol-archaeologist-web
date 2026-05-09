@@ -5,21 +5,27 @@ import Link from "next/link";
 import { useEffect, useState, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-const LABEL_COLORS: Record<string, string> = {
-  balance_check: "bg-blue-100 text-blue-800",
-  late_fee: "bg-orange-100 text-orange-800",
-  kyc_screening: "bg-purple-100 text-purple-800",
-  interest_calculation: "bg-green-100 text-green-800",
-  loan_eligibility: "bg-yellow-100 text-yellow-800",
-  transaction_validation: "bg-red-100 text-red-800",
-  fraud_check: "bg-rose-100 text-rose-800",
-  payroll: "bg-teal-100 text-teal-800",
-};
+const LABELS = [
+  "balance_check",
+  "late_fee",
+  "kyc_screening",
+  "interest_calculation",
+  "loan_eligibility",
+  "transaction_validation",
+  "fraud_check",
+  "payroll",
+];
 
-function labelColor(l: string | null) {
-  if (!l) return "bg-zinc-100 text-zinc-500";
-  return LABEL_COLORS[l] ?? "bg-zinc-100 text-zinc-600";
-}
+const LABEL_HUE: Record<string, string> = {
+  balance_check: "#1f4a6b",
+  late_fee: "#8a5a00",
+  kyc_screening: "#5a1f0a",
+  interest_calculation: "#2f5d3a",
+  loan_eligibility: "#6b4f00",
+  transaction_validation: "#7a1d1d",
+  fraud_check: "#9a3412",
+  payroll: "#1f5d5a",
+};
 
 const PAGE_SIZE = 25;
 
@@ -41,7 +47,12 @@ function BlocksContent() {
     setLoading(true);
     setError(null);
     try {
-      const result = await api.blocks({ page, size: PAGE_SIZE, q: q || undefined, label: label || undefined });
+      const result = await api.blocks({
+        page,
+        size: PAGE_SIZE,
+        q: q || undefined,
+        label: label || undefined,
+      });
       setData(result);
     } catch (e) {
       setError(String(e));
@@ -50,7 +61,9 @@ function BlocksContent() {
     }
   }, [page, q, label]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
   function pushSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -77,114 +90,193 @@ function BlocksContent() {
     router.push(`/blocks?${params}`);
   }
 
-  const totalPages = data ? Math.ceil(data.total / PAGE_SIZE) : 1;
+  const totalPages = data ? Math.max(1, Math.ceil(data.total / PAGE_SIZE)) : 1;
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Logic Blocks</h1>
-        <p className="text-zinc-500 dark:text-zinc-400 text-sm mt-1">
-          {data ? `${data.total.toLocaleString()} blocks` : "Loading…"}
-        </p>
-      </div>
+    <div className="rise space-y-10">
+      {/* Header */}
+      <header className="grid lg:grid-cols-12 gap-6 items-end border-b border-ink pb-6">
+        <div className="lg:col-span-7">
+          <p className="eyebrow">§ 02 · The catalogue</p>
+          <h1 className="font-display mt-2 text-5xl md:text-6xl leading-none">
+            Logic Blocks
+          </h1>
+          <p className="mt-4 text-ink-2 max-w-xl">
+            Self-contained paragraphs of COBOL, indexed by file and labelled by
+            inferred business intent. Click any entry to read its source and
+            generated intent card.
+          </p>
+        </div>
+        <div className="lg:col-span-5 lg:text-right">
+          <p className="eyebrow">Total in corpus</p>
+          <p className="font-display num text-5xl md:text-6xl leading-none mt-2">
+            {data ? data.total.toLocaleString() : <span className="text-ink-4">—</span>}
+          </p>
+        </div>
+      </header>
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <form onSubmit={pushSearch} className="flex gap-2 flex-1">
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search paragraph or code…"
-            className="flex-1 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-500"
-          />
+      {/* Filter rail */}
+      <section className="space-y-4">
+        <form onSubmit={pushSearch} className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <span className="eyebrow absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none">
+              Find
+            </span>
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="paragraph name, code fragment, variable…"
+              className="w-full rounded-sm border border-ink/15 bg-card pl-16 pr-4 py-3 text-sm placeholder:text-ink-4 focus:outline-none focus:border-ink focus:ring-2 focus:ring-accent/30 transition"
+            />
+          </div>
           <button
             type="submit"
-            className="rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-4 py-2 text-sm font-medium hover:bg-zinc-700 dark:hover:bg-zinc-300 transition-colors"
+            className="rounded-sm bg-ink text-paper px-6 py-3 text-sm font-medium hover:bg-accent-ink transition-colors"
           >
             Search
           </button>
         </form>
 
-        <select
-          value={label}
-          onChange={(e) => setLabel(e.target.value)}
-          className="rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-500"
-        >
-          <option value="">All labels</option>
-          {Object.keys(LABEL_COLORS).map((l) => (
-            <option key={l} value={l}>{l}</option>
-          ))}
-        </select>
-      </div>
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <span className="eyebrow mr-2">Filter by intent</span>
+          <button
+            onClick={() => setLabel("")}
+            className={`rounded-full px-3 py-1 border transition-colors ${
+              !label
+                ? "bg-ink text-paper border-ink"
+                : "border-rule-strong text-ink-2 hover:border-ink"
+            }`}
+          >
+            All
+          </button>
+          {LABELS.map((l) => {
+            const active = label === l;
+            return (
+              <button
+                key={l}
+                onClick={() => setLabel(l)}
+                style={
+                  active
+                    ? { background: LABEL_HUE[l], color: "var(--paper)", borderColor: LABEL_HUE[l] }
+                    : { borderColor: "var(--rule-strong)" }
+                }
+                className="rounded-full px-3 py-1 border text-ink-2 hover:border-ink transition-colors"
+              >
+                {l.replace(/_/g, " ")}
+              </button>
+            );
+          })}
+        </div>
+      </section>
 
       {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-700 text-sm">{error}</div>
+        <div className="rounded-sm border border-bad/30 bg-[var(--bad-soft)] p-4 text-sm text-ink-2">
+          <span className="eyebrow text-[var(--bad)] mr-2">Error</span> {error}
+        </div>
       )}
 
-      {loading && (
-        <div className="text-zinc-400 text-sm animate-pulse">Loading…</div>
-      )}
+      {/* Table */}
+      <section>
+        {loading && !data && (
+          <ul className="space-y-px">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <li key={i} className="h-14 shimmer rounded-sm" />
+            ))}
+          </ul>
+        )}
 
-      {!loading && data && (
-        <>
-          <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden">
-            <table className="w-full text-sm">
-              <thead className="bg-zinc-50 dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800">
-                <tr>
-                  <th className="text-left px-4 py-3 font-medium text-zinc-600 dark:text-zinc-400">Paragraph</th>
-                  <th className="text-left px-4 py-3 font-medium text-zinc-600 dark:text-zinc-400 hidden md:table-cell">File</th>
-                  <th className="text-left px-4 py-3 font-medium text-zinc-600 dark:text-zinc-400">Label</th>
-                  <th className="text-left px-4 py-3 font-medium text-zinc-600 dark:text-zinc-400 hidden sm:table-cell">Lines</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
-                {data.items.map((block) => (
-                  <tr key={block.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-900/50 transition-colors">
-                    <td className="px-4 py-3">
-                      <Link
-                        href={`/blocks/${encodeURIComponent(block.id)}`}
-                        className="font-mono text-blue-600 dark:text-blue-400 hover:underline"
-                      >
-                        {block.paragraph}
-                      </Link>
-                    </td>
-                    <td className="px-4 py-3 hidden md:table-cell font-mono text-xs text-zinc-500 truncate max-w-[200px]">
-                      {block.source_file.split(/[/\\]/).slice(-2).join("/")}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${labelColor(block.weak_label)}`}>
-                        {block.weak_label ?? "—"}
+        {data && (
+          <div>
+            <div className="hidden md:grid grid-cols-12 gap-4 px-2 pb-3 border-b border-ink eyebrow">
+              <span className="col-span-1">№</span>
+              <span className="col-span-4">Paragraph</span>
+              <span className="col-span-4">Source file</span>
+              <span className="col-span-2">Intent</span>
+              <span className="col-span-1 text-right">Lines</span>
+            </div>
+            <ul className="divide-y divide-rule">
+              {data.items.map((block, i) => {
+                const idx = (page - 1) * PAGE_SIZE + i + 1;
+                const file = block.source_file.split(/[/\\]/).slice(-1)[0];
+                return (
+                  <li key={block.id} className="group">
+                    <Link
+                      href={`/blocks/${encodeURIComponent(block.id)}`}
+                      className="grid md:grid-cols-12 gap-2 md:gap-4 px-2 py-4 items-center hover:bg-paper-2/60 transition-colors"
+                    >
+                      <span className="md:col-span-1 eyebrow num text-ink-4">
+                        {String(idx).padStart(3, "0")}
                       </span>
-                    </td>
-                    <td className="px-4 py-3 hidden sm:table-cell text-zinc-500 tabular-nums">
-                      {block.start_line}–{block.end_line}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                      <span className="md:col-span-4 font-display text-lg leading-tight text-ink group-hover:text-accent-ink transition-colors">
+                        {block.paragraph}
+                      </span>
+                      <span className="md:col-span-4 font-mono text-xs text-ink-3 truncate">
+                        {file}
+                      </span>
+                      <span className="md:col-span-2">
+                        {block.weak_label ? (
+                          <span
+                            className="inline-flex items-center gap-1.5 text-xs"
+                            style={{ color: LABEL_HUE[block.weak_label] ?? "var(--ink-3)" }}
+                          >
+                            <span
+                              className="h-1.5 w-1.5 rounded-full"
+                              style={{ background: LABEL_HUE[block.weak_label] ?? "var(--ink-3)" }}
+                            />
+                            {block.weak_label.replace(/_/g, " ")}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-ink-4 italic">unlabelled</span>
+                        )}
+                      </span>
+                      <span className="md:col-span-1 md:text-right num text-xs text-ink-3">
+                        {block.start_line}–{block.end_line}
+                      </span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
 
-          {/* Pagination */}
-          <div className="flex items-center gap-2 justify-end text-sm">
+            {data.items.length === 0 && (
+              <div className="py-16 text-center">
+                <p className="font-display text-3xl text-ink-3 italic">Nothing found.</p>
+                <p className="text-sm text-ink-4 mt-2">
+                  Try a broader query or clear the active filter.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+      </section>
+
+      {/* Pagination */}
+      {data && data.items.length > 0 && (
+        <nav className="flex items-center justify-between border-t border-rule pt-6">
+          <p className="text-sm text-ink-3">
+            <span className="eyebrow mr-2">Folio</span>
+            <span className="num">{page}</span>
+            <span className="mx-2 text-ink-4">/</span>
+            <span className="num">{totalPages}</span>
+          </p>
+          <div className="flex items-center gap-2">
             <button
               onClick={() => goPage(page - 1)}
               disabled={page <= 1}
-              className="rounded-lg border border-zinc-300 dark:border-zinc-700 px-3 py-1.5 disabled:opacity-40 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+              className="rounded-sm border border-ink/20 px-4 py-2 text-sm hover:bg-ink hover:text-paper disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-ink transition-colors"
             >
-              ← Prev
+              ← Previous
             </button>
-            <span className="text-zinc-500">Page {page} / {totalPages}</span>
             <button
               onClick={() => goPage(page + 1)}
               disabled={page >= totalPages}
-              className="rounded-lg border border-zinc-300 dark:border-zinc-700 px-3 py-1.5 disabled:opacity-40 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+              className="rounded-sm border border-ink/20 px-4 py-2 text-sm hover:bg-ink hover:text-paper disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-ink transition-colors"
             >
               Next →
             </button>
           </div>
-        </>
+        </nav>
       )}
     </div>
   );
@@ -192,7 +284,14 @@ function BlocksContent() {
 
 export default function BlocksPage() {
   return (
-    <Suspense fallback={<div className="text-zinc-400 text-sm animate-pulse">Loading blocks…</div>}>
+    <Suspense
+      fallback={
+        <div className="space-y-3">
+          <div className="h-12 w-64 shimmer rounded-sm" />
+          <div className="h-4 w-96 shimmer rounded-sm" />
+        </div>
+      }
+    >
       <BlocksContent />
     </Suspense>
   );

@@ -1,37 +1,42 @@
 "use client";
 
-import { api, BusinessIntentCard } from "@/lib/api";
+import { api } from "@/lib/api";
 import { useState } from "react";
 
 export default function InferButton({ blockId }: { blockId: string }) {
   const [loading, setLoading] = useState(false);
-  const [card, setCard] = useState<BusinessIntentCard | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   async function handleInfer() {
     setLoading(true);
     setError(null);
     try {
-      const result = await api.infer(blockId, "ollama");
-      setCard(result);
-      // Reload the page to show the new card in the server component
+      await api.infer(blockId, "ollama");
       window.location.reload();
     } catch (e) {
       setError(String(e));
-    } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div className="flex items-center gap-2">
-      {error && <span className="text-xs text-red-500">{error}</span>}
+    <div className="flex items-center gap-3">
+      {error && (
+        <span className="text-[11px] text-[var(--bad)] max-w-[180px] truncate" title={error}>
+          {error}
+        </span>
+      )}
       <button
         onClick={handleInfer}
         disabled={loading}
-        className="rounded-lg border border-zinc-300 dark:border-zinc-700 px-3 py-1.5 text-xs font-medium hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors disabled:opacity-50"
+        className="group inline-flex items-center gap-2 rounded-sm border border-ink/20 px-3 py-1.5 text-xs font-medium hover:bg-ink hover:text-paper hover:border-ink disabled:opacity-50 disabled:cursor-wait transition-colors"
       >
-        {loading ? "Generating…" : "Re-generate with Ollama"}
+        <span
+          className={`h-1.5 w-1.5 rounded-full ${
+            loading ? "bg-accent animate-pulse" : "bg-ok group-hover:bg-paper"
+          }`}
+        />
+        {loading ? "Generating…" : "Generate with Ollama"}
       </button>
     </div>
   );
