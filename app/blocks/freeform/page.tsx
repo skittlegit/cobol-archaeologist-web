@@ -28,7 +28,7 @@ export default function FreeformPage() {
     } catch (e) {
       const msg = String(e);
       const friendlyMsg =
-        msg.includes("TimeoutError") || msg.includes("timed out")
+        msg.includes("TimeoutError") || msg.includes("timed out") || msg.includes("504")
           ? "Ollama timed out — is it running? (ollama serve)"
           : msg.includes("fetch failed") || msg.includes("ECONNREFUSED") || msg.includes("Failed to fetch")
           ? "Cannot reach Ollama — run: ollama serve"
