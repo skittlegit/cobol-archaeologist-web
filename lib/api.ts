@@ -1,16 +1,16 @@
 /**
  * Typed API client.
  *
- * Server components (SSR/RSC) call the Render backend directly via
- * NEXT_PUBLIC_API_URL (always available at runtime on the server).
+ * Server components (SSR/RSC) call the local Python API directly via
+ * NEXT_PUBLIC_API_URL.
  *
- * Client components call /api/backend/... which is a Next.js proxy route
- * on the same Vercel domain — no CORS, no env-var baking required.
+ * Client components call /api/backend/... which is a Next.js proxy route —
+ * no CORS issues, no env-var baking required.
  */
 
 const BASE =
   typeof window === "undefined"
-    ? // Server: read env var at runtime (always works on Vercel/Render)
+    ? // Server: read env var at runtime
       (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000")
     : // Client: use the local proxy so CORS / env-baking is never an issue
       "/api/backend";

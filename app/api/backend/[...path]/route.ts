@@ -1,11 +1,11 @@
 /**
  * Catch-all proxy route — forwards all /api/backend/* requests to the
- * Python Render backend. Client components call this instead of Render
+ * local Python API backend. Client components call this instead of the API
  * directly, which avoids CORS issues and NEXT_PUBLIC env-var baking.
  */
 import { NextRequest, NextResponse } from "next/server";
 
-const RENDER_BASE =
+const API_BASE =
   process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 async function proxy(
@@ -16,7 +16,7 @@ async function proxy(
 ) {
   const path = params.path.join("/");
   const search = req.nextUrl.search;
-  const url = `${RENDER_BASE}/${path}${search}`;
+  const url = `${API_BASE}/${path}${search}`;
 
   const upstream = await fetch(url, {
     method,
