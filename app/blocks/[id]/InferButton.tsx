@@ -14,7 +14,14 @@ export default function InferButton({ blockId }: { blockId: string }) {
       await api.infer(blockId, "ollama");
       window.location.reload();
     } catch (e) {
-      setError(String(e));
+      const msg = String(e);
+      const friendlyMsg =
+        msg.includes("TimeoutError") || msg.includes("timed out")
+          ? "Ollama timed out — is it running? (ollama serve)"
+          : msg.includes("fetch failed") || msg.includes("ECONNREFUSED") || msg.includes("Failed to fetch")
+          ? "Cannot reach Ollama — run: ollama serve"
+          : msg.replace(/^Error:\s*/, "");
+      setError(friendlyMsg);
       setLoading(false);
     }
   }

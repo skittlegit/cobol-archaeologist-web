@@ -82,14 +82,12 @@ export interface RegSearchHit {
 
 // ---- helpers -------------------------------------------------------------
 
-async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+async function apiFetch<T>(path: string, init?: RequestInit, timeoutMs = 15000): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
     ...init,
     headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },
-    // Disable Next.js caching for API calls so data is always fresh
     cache: "no-store",
-    // 15 s timeout — handles Render free-tier cold starts gracefully
-    signal: AbortSignal.timeout(15000),
+    signal: AbortSignal.timeout(timeoutMs),
   });
   if (!res.ok) {
     const text = await res.text().catch(() => res.statusText);
@@ -122,11 +120,13 @@ export const api = {
   card: (blockId: string) =>
     apiFetch<BusinessIntentCard>(`/cards/${encodeURIComponent(blockId)}`),
 
+  // Inference can take several minutes on local hardware — use a 3-minute timeout
   infer: (blockId: string, backend = "ollama") =>
-    apiFetch<BusinessIntentCard>(`/infer/${encodeURIComponent(blockId)}`, {
-      method: "POST",
-      body: JSON.stringify({ backend }),
-    }),
+    apiFetch<BusinessIntentCard>(
+      `/infer/${encodeURIComponent(blockId)}`,
+      { method: "POST", body: JSON.stringify({ backend }) },
+      180000,
+    ),
 
   searchRegulations: (q: string, k = 5) =>
     apiFetch<RegSearchHit[]>(
