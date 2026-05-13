@@ -128,6 +128,13 @@ export const api = {
       180000,
     ),
 
+  analyseFreeform: (code: string, backend = "ollama", paragraph = "FREEFORM") =>
+    apiFetch<BusinessIntentCard>(
+      `/analyse`,
+      { method: "POST", body: JSON.stringify({ code, backend, paragraph }) },
+      180000,
+    ),
+
   searchRegulations: (q: string, k = 5) =>
     apiFetch<RegSearchHit[]>(
       `/regulations/search?${new URLSearchParams({ q, k: String(k) })}`

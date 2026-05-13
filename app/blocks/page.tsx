@@ -112,6 +112,13 @@ function BlocksContent() {
           <p className="font-display num text-5xl md:text-6xl leading-none mt-2">
             {data ? data.total.toLocaleString() : <span className="text-ink-4">—</span>}
           </p>
+          <Link
+            href="/blocks/freeform"
+            className="mt-4 inline-flex items-center gap-1.5 text-xs text-ink-3 hover:text-ink transition-colors"
+          >
+            Try with custom code
+            <span aria-hidden>→</span>
+          </Link>
         </div>
       </header>
 

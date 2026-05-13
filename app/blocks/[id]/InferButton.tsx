@@ -1,9 +1,11 @@
 "use client";
 
 import { api } from "@/lib/api";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 export default function InferButton({ blockId }: { blockId: string }) {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -12,7 +14,7 @@ export default function InferButton({ blockId }: { blockId: string }) {
     setError(null);
     try {
       await api.infer(blockId, "ollama");
-      window.location.reload();
+      router.refresh();
     } catch (e) {
       const msg = String(e);
       const friendlyMsg =
