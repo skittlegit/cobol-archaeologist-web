@@ -18,12 +18,13 @@ export default function InferButton({ blockId }: { blockId: string }) {
     } catch (e) {
       const msg = String(e);
       const friendlyMsg =
-        msg.includes("TimeoutError") || msg.includes("timed out")
+        msg.includes("TimeoutError") || msg.includes("timed out") || msg.includes("504")
           ? "Ollama timed out — is it running? (ollama serve)"
           : msg.includes("fetch failed") || msg.includes("ECONNREFUSED") || msg.includes("Failed to fetch")
           ? "Cannot reach Ollama — run: ollama serve"
           : msg.replace(/^Error:\s*/, "");
       setError(friendlyMsg);
+    } finally {
       setLoading(false);
     }
   }
@@ -31,13 +32,19 @@ export default function InferButton({ blockId }: { blockId: string }) {
   return (
     <div className="flex items-center gap-3">
       {error && (
-        <span className="text-[11px] text-[var(--bad)] max-w-[180px] truncate" title={error}>
+        <span
+          role="alert"
+          aria-live="polite"
+          className="text-[11px] text-[var(--bad)] max-w-[180px] truncate"
+          title={error}
+        >
           {error}
         </span>
       )}
       <button
         onClick={handleInfer}
         disabled={loading}
+        aria-busy={loading}
         className="group inline-flex items-center gap-2 rounded-sm border border-ink/20 px-3 py-1.5 text-xs font-medium hover:bg-ink hover:text-paper hover:border-ink disabled:opacity-50 disabled:cursor-wait transition-colors"
       >
         <span

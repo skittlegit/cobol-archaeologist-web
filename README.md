@@ -1,36 +1,65 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# cobol-archaeologist-web
 
-## Getting Started
+Next.js dashboard for the [COBOL Archaeologist](https://github.com/twiswiz/cobol-archaeologist)
+backend — browse logic blocks, view inferred Business Intent Cards, search
+regulations, and run on-demand inference against pasted COBOL code.
 
-First, run the development server:
+## Stack
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- Next.js 16 (App Router) + React 19 + TypeScript 5
+- Tailwind CSS 4
+- Talks to the FastAPI backend over HTTP (default: `http://localhost:8000`)
+
+## Prerequisites
+
+The Python backend in [cobol-archaeologist](https://github.com/twiswiz/cobol-archaeologist)
+must be running. From that repo:
+
+```powershell
+uvicorn cobol_archaeologist.api.main:app --reload --port 8000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+For LLM inference, [Ollama](https://ollama.com/) must be running with the
+target model pulled:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```powershell
+ollama serve
+ollama pull qwen2.5-coder:1.5b
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Setup
 
-## Learn More
+```powershell
+npm install
+copy .env.local.example .env.local   # adjust NEXT_PUBLIC_API_URL if needed
+npm run dev
+```
 
-To learn more about Next.js, take a look at the following resources:
+Open <http://localhost:3000>.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## One-command startup
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+The backend repo contains a `dev.ps1` that launches both the API and this
+frontend in two PowerShell windows:
 
-## Deploy on Vercel
+```powershell
+cd ..\cobol-archaeologist
+.\dev.ps1
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Architecture
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `lib/api.ts` — typed API client. Server components hit the FastAPI backend
+  directly via `NEXT_PUBLIC_API_URL`; client components hit `/api/backend/*`,
+  which is proxied by the Next.js route below.
+- `app/api/backend/[...path]/route.ts` — catch-all proxy that forwards to the
+  Python API. Avoids CORS and `NEXT_PUBLIC_*` baking issues for client calls.
+  Long-running `infer/*` and `analyse` requests get a 200 s timeout.
+- `app/blocks/` — list, detail, and freeform-paste pages.
+- `app/search/` — regulation search.
+
+## Environment
+
+| Var | Default | Purpose |
+|-----|---------|---------|
+| `NEXT_PUBLIC_API_URL` | `http://localhost:8000` | FastAPI backend base URL |
