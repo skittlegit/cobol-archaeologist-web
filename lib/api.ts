@@ -1,21 +1,25 @@
 /**
- * Typed API client.
- *
- * Server components (SSR/RSC) call the local Python API directly via
- * NEXT_PUBLIC_API_URL.
- *
- * Client components call /api/backend/... which is a Next.js proxy route —
- * no CORS issues, no env-var baking required.
+ * Typed API client — all calls go directly to the local backend.
+ * CORS is open on the backend, so the browser can call it straight.
+ * Change the single constant below to point elsewhere.
  */
 
-const BASE =
-  typeof window === "undefined"
-    ? // Server: read env var at runtime
-      (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000")
-    : // Client: use the local proxy so CORS / env-baking is never an issue
-      "/api/backend";
+export const API_URL = "http://localhost:8000";
 
-// ---- shared types -------------------------------------------------------
+export interface Confidence {
+  level: "High" | "Medium" | "Low";
+  justification: string;
+}
+
+export interface BusinessIntentCard {
+  logic_block_id: string | null;
+  what: string;
+  why: string;
+  code_evidence: string[];
+  regulation_link: string | null;
+  regulation_sources: string[];
+  confidence: Confidence;
+}
 
 export interface LogicBlock {
   id: string;
@@ -35,19 +39,11 @@ export interface LogicBlock {
   tags: string[];
 }
 
-export interface Confidence {
-  level: "High" | "Medium" | "Low";
-  justification: string;
-}
-
-export interface BusinessIntentCard {
-  logic_block_id: string | null;
-  what: string;
-  why: string;
-  code_evidence: string[];
-  regulation_link: string | null;
-  regulation_sources: string[];
-  confidence: Confidence;
+export interface PagedCards {
+  total: number;
+  page: number;
+  size: number;
+  items: BusinessIntentCard[];
 }
 
 export interface PagedBlocks {
@@ -55,13 +51,6 @@ export interface PagedBlocks {
   page: number;
   size: number;
   items: LogicBlock[];
-}
-
-export interface PagedCards {
-  total: number;
-  page: number;
-  size: number;
-  items: BusinessIntentCard[];
 }
 
 export interface Stats {
@@ -80,63 +69,67 @@ export interface RegSearchHit {
   score: number;
 }
 
-// ---- helpers -------------------------------------------------------------
+export interface HealthResp {
+  status?: string;
+  ok?: boolean;
+}
 
-async function apiFetch<T>(path: string, init?: RequestInit, timeoutMs = 15000): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, {
+export interface ModelStatusResp {
+  path?: string | null;
+  model_path?: string | null;
+  loaded: boolean;
+}
+
+async function j<T>(
+  path: string,
+  init?: RequestInit,
+  timeoutMs = 20000,
+): Promise<T> {
+  const r = await fetch(`${API_URL}${path}`, {
     ...init,
     headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },
     cache: "no-store",
     signal: AbortSignal.timeout(timeoutMs),
   });
-  if (!res.ok) {
-    const text = await res.text().catch(() => res.statusText);
-    throw new Error(`API ${path} → ${res.status}: ${text}`);
+  if (!r.ok) {
+    const t = await r.text().catch(() => r.statusText);
+    throw new Error(`API ${path} → ${r.status}: ${t}`);
   }
-  return res.json() as Promise<T>;
+  return r.json() as Promise<T>;
 }
 
-// ---- endpoints -----------------------------------------------------------
-
 export const api = {
-  stats: () => apiFetch<Stats>("/stats"),
+  health: () => j<HealthResp>("/health", undefined, 8000),
+  modelStatus: () => j<ModelStatusResp>("/model/status", undefined, 8000),
 
-  blocks: (params: {
-    page?: number;
-    size?: number;
-    label?: string;
-    q?: string;
-  }) => {
-    const sp = new URLSearchParams();
-    if (params.page) sp.set("page", String(params.page));
-    if (params.size) sp.set("size", String(params.size));
-    if (params.label) sp.set("label", params.label);
-    if (params.q) sp.set("q", params.q);
-    return apiFetch<PagedBlocks>(`/blocks?${sp}`);
-  },
+  stats: () => j<Stats>("/stats"),
 
-  block: (id: string) => apiFetch<LogicBlock>(`/blocks/${encodeURIComponent(id)}`),
+  cards: (page = 1, size = 12) =>
+    j<PagedCards>(`/cards?page=${page}&size=${size}`),
 
   card: (blockId: string) =>
-    apiFetch<BusinessIntentCard>(`/cards/${encodeURIComponent(blockId)}`),
+    j<BusinessIntentCard>(`/cards/${encodeURIComponent(blockId)}`),
 
-  // Inference can take several minutes on local hardware — use a 3-minute timeout
-  infer: (blockId: string, backend = "ollama") =>
-    apiFetch<BusinessIntentCard>(
-      `/infer/${encodeURIComponent(blockId)}`,
-      { method: "POST", body: JSON.stringify({ backend }) },
-      180000,
+  blocks: (p: { page?: number; size?: number; label?: string; q?: string }) => {
+    const sp = new URLSearchParams();
+    if (p.page) sp.set("page", String(p.page));
+    if (p.size) sp.set("size", String(p.size));
+    if (p.label) sp.set("label", p.label);
+    if (p.q) sp.set("q", p.q);
+    return j<PagedBlocks>(`/blocks?${sp}`);
+  },
+
+  block: (id: string) => j<LogicBlock>(`/blocks/${encodeURIComponent(id)}`),
+
+  searchRegulations: (q: string, k = 6) =>
+    j<RegSearchHit[]>(
+      `/regulations/search?${new URLSearchParams({ q, k: String(k) })}`,
     ),
 
-  analyseFreeform: (code: string, backend = "ollama", paragraph = "FREEFORM") =>
-    apiFetch<BusinessIntentCard>(
-      `/analyse`,
-      { method: "POST", body: JSON.stringify({ code, backend, paragraph }) },
+  prompt: (prompt: string, maxTokens = 512) =>
+    j<{ response?: string }>(
+      "/prompt",
+      { method: "POST", body: JSON.stringify({ prompt, max_tokens: maxTokens }) },
       180000,
-    ),
-
-  searchRegulations: (q: string, k = 5) =>
-    apiFetch<RegSearchHit[]>(
-      `/regulations/search?${new URLSearchParams({ q, k: String(k) })}`
     ),
 };

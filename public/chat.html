@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>COBOL Archaeologist — Chat</title>
+<style>
+  :root{
+    --bg:#f6f7fb;--surface:#fff;--surface-2:#f1f2f7;--border:#e6e8f0;
+    --fg:#11131c;--fg-muted:#5a6072;--fg-faint:#9aa0b4;
+    --accent:#6366f1;--accent-2:#8b5cf6;--accent-fg:#fff;
+    --ok:#16a34a;--bad:#e1483f;
+    --sh-sm:0 1px 3px rgba(17,19,28,.06);--sh-md:0 4px 12px rgba(17,19,28,.06);
+    --sh-lg:0 12px 32px rgba(17,19,28,.10);
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --bg:#08090d;--surface:#14161e;--surface-2:#1b1e29;--border:#262a37;
+    --fg:#f1f2f7;--fg-muted:#a2a8bd;--fg-faint:#686e82;
+    --accent:#7c83ff;--accent-2:#a78bfa;--ok:#34d399;--bad:#f87171;
+    --sh-sm:0 1px 2px rgba(0,0,0,.3);--sh-md:0 6px 18px rgba(0,0,0,.4);--sh-lg:0 16px 40px rgba(0,0,0,.55);
+  }}
+  *{box-sizing:border-box;margin:0}
+  html,body{height:100%}
+  body{
+    background:var(--bg);color:var(--fg);
+    font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+    -webkit-font-smoothing:antialiased;
+    background-image:
+      radial-gradient(60rem 40rem at 12% -8%,color-mix(in oklab,var(--accent) 14%,transparent),transparent 60%),
+      radial-gradient(50rem 36rem at 92% 0%,color-mix(in oklab,var(--accent-2) 12%,transparent),transparent 55%);
+    background-attachment:fixed;
+  }
+  .app{display:flex;flex-direction:column;height:100dvh}
+  .wrap{width:100%;max-width:48rem;margin:0 auto;padding:0 24px}
+  header{position:sticky;top:0;z-index:10;border-bottom:1px solid var(--border);
+    background:color-mix(in oklab,var(--surface) 72%,transparent);
+    backdrop-filter:saturate(180%) blur(14px);-webkit-backdrop-filter:saturate(180%) blur(14px)}
+  .hbar{display:flex;align-items:center;justify-content:space-between;height:64px;gap:16px}
+  .brand{display:flex;align-items:center;gap:12px}
+  .mark{width:36px;height:36px;border-radius:12px;display:grid;place-items:center;color:var(--accent-fg);
+    background-image:linear-gradient(135deg,var(--accent),var(--accent-2));box-shadow:var(--sh-sm)}
+  .brand h1{font-size:15px;font-weight:600;letter-spacing:-.01em}
+  .brand p{font-size:12px;color:var(--fg-faint)}
+  .pill{display:flex;align-items:center;gap:10px;border:1px solid var(--border);
+    background:var(--surface);border-radius:999px;padding:6px 12px;box-shadow:var(--sh-sm)}
+  .dot{position:relative;width:8px;height:8px;border-radius:999px;background:var(--fg-faint);flex:none}
+  .dot.ok{background:var(--ok)}.dot.bad{background:var(--bad)}
+  .dot.ok::after{content:"";position:absolute;inset:0;border-radius:999px;background:var(--ok);
+    animation:ring 1.8s cubic-bezier(.2,.7,.4,1) infinite}
+  @keyframes ring{0%{transform:scale(.9);opacity:.6}70%{transform:scale(2.2);opacity:0}100%{opacity:0}}
+  .pill .lbl{font-size:12px;font-weight:500;line-height:1.1}
+  .pill .sub{font-size:10px;color:var(--fg-faint);font-family:ui-monospace,monospace;
+    max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .scroll{flex:1;overflow-y:auto}
+  .log{display:flex;flex-direction:column;gap:28px;padding:24px 0}
+  .row{display:flex;gap:12px;animation:in .32s cubic-bezier(.22,.7,.18,1) both}
+  .row.user{flex-direction:row-reverse}
+  @keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  .av{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;flex:none;
+    font-size:11px;font-weight:600;margin-top:2px}
+  .row.user .av{color:var(--accent-fg);background-image:linear-gradient(135deg,var(--accent),var(--accent-2))}
+  .row.model .av{border:1px solid var(--border);background:var(--surface-2);color:var(--fg-muted)}
+  .row.user .bubble{max-width:78%;padding:10px 16px;border-radius:16px;border-top-right-radius:6px;
+    font-size:15px;line-height:1.6;white-space:pre-wrap;word-wrap:break-word;box-shadow:var(--sh-sm);
+    color:var(--accent-fg);background-image:linear-gradient(135deg,var(--accent),var(--accent-2))}
+  .row.model .content{min-width:0;flex:1;padding-top:2px;font-size:15px;line-height:1.65}
+  /* markdown */
+  .content>*:first-child{margin-top:0}.content>*:last-child{margin-bottom:0}
+  .content h1{font-size:1.35rem;font-weight:600;letter-spacing:-.01em;margin:20px 0 10px}
+  .content h2{font-size:1.15rem;font-weight:600;letter-spacing:-.01em;margin:20px 0 8px}
+  .content h3{font-size:1rem;font-weight:600;margin:16px 0 6px}
+  .content h4{font-size:.9rem;font-weight:600;margin:12px 0 6px}
+  .content h5,.content h6{font-size:.8rem;font-weight:600;text-transform:uppercase;
+    letter-spacing:.04em;color:var(--fg-muted);margin:12px 0 4px}
+  .content p{margin:10px 0}
+  .content ul,.content ol{margin:10px 0;padding-left:22px}
+  .content li{margin:6px 0}
+  .content li::marker{color:var(--fg-faint)}
+  .content a{color:var(--accent);text-decoration:underline;text-underline-offset:2px}
+  .content strong{font-weight:600}
+  .content em{font-style:italic}
+  .content del{opacity:.7}
+  .content blockquote{margin:12px 0;padding:2px 0 2px 16px;border-left:3px solid color-mix(in oklab,var(--accent) 40%,transparent);color:var(--fg-muted)}
+  .content hr{margin:20px 0;border:0;border-top:1px solid var(--border)}
+  .content code.inline{border:1px solid var(--border);background:var(--surface-2);
+    border-radius:6px;padding:2px 6px;font-family:ui-monospace,monospace;font-size:.85em}
+  .content table{width:100%;border-collapse:collapse;font-size:14px;margin:12px 0}
+  .content th,.content td{border:1px solid var(--border);padding:8px 12px;text-align:left;vertical-align:top}
+  .content th{background:var(--surface-2);font-weight:600}
+  .codeblock{margin:14px 0;border:1px solid var(--border);border-radius:12px;
+    overflow:hidden;background:var(--surface-2)}
+  .codeblock .chead{display:flex;align-items:center;justify-content:space-between;
+    padding:8px 14px;border-bottom:1px solid var(--border)}
+  .codeblock .clang{font-family:ui-monospace,monospace;font-size:11px;text-transform:uppercase;
+    letter-spacing:.08em;color:var(--fg-faint)}
+  .codeblock .ccopy{border:0;background:transparent;color:var(--fg-muted);font:inherit;
+    font-size:11px;font-weight:500;padding:4px 8px;border-radius:6px;cursor:pointer}
+  .codeblock .ccopy:hover{background:var(--bg);color:var(--fg)}
+  .codeblock pre{margin:0;padding:16px;overflow-x:auto;font-size:13px;line-height:1.6}
+  .codeblock code{font-family:ui-monospace,monospace}
+  .empty{min-height:64dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:32px 0}
+  .empty .mark{width:64px;height:64px;border-radius:18px;margin-bottom:24px;box-shadow:var(--sh-md)}
+  .empty h2{font-size:1.7rem;font-weight:600;letter-spacing:-.01em}
+  .empty .desc{margin-top:12px;font-size:15px;line-height:1.65;color:var(--fg-muted);max-width:36rem}
+  .caps{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;width:100%;max-width:42rem;margin-top:36px}
+  @media (max-width:640px){.caps{grid-template-columns:1fr}}
+  .cap{border:1px solid var(--border);background:var(--surface);border-radius:12px;
+    padding:16px;text-align:left;box-shadow:var(--sh-sm)}
+  .cap b{font-size:14px;font-weight:600}
+  .cap p{margin-top:6px;font-size:13px;line-height:1.55;color:var(--fg-muted)}
+  .tryl{margin-top:40px;font-size:11px;font-weight:600;text-transform:uppercase;
+    letter-spacing:.08em;color:var(--fg-faint)}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:12px}
+  .chip{border:1px solid var(--border);background:var(--surface);border-radius:999px;
+    padding:8px 14px;font-size:13px;color:var(--fg-muted);cursor:pointer;box-shadow:var(--sh-sm);
+    font-family:inherit;transition:color .15s,border-color .15s}
+  .chip:hover{color:var(--fg);border-color:color-mix(in oklab,var(--accent) 40%,var(--border))}
+  .dots{display:flex;align-items:center;gap:6px;height:28px}
+  .dots i{width:6px;height:6px;border-radius:999px;background:var(--fg-faint);display:inline-block;
+    animation:bob 1.2s infinite ease-in-out}
+  .dots i:nth-child(2){animation-delay:.16s}.dots i:nth-child(3){animation-delay:.32s}
+  @keyframes bob{0%,80%,100%{transform:scale(.5);opacity:.4}40%{transform:scale(1);opacity:1}}
+  .composer{border-top:1px solid var(--border)}
+  .cwrap{padding:16px 24px}
+  .field{display:flex;align-items:flex-end;gap:8px;border:1px solid var(--border);
+    background:var(--surface);border-radius:16px;padding:8px;box-shadow:var(--sh-md);
+    transition:box-shadow .2s,border-color .2s}
+  .field:focus-within{box-shadow:var(--sh-lg);border-color:color-mix(in oklab,var(--accent) 40%,var(--border))}
+  textarea{flex:1;resize:none;border:0;background:transparent;color:var(--fg);
+    font:15px/1.6 inherit;padding:8px 12px;max-height:200px}
+  textarea:focus{outline:none}
+  textarea::placeholder{color:var(--fg-faint)}
+  .send{width:40px;height:40px;flex:none;border:0;border-radius:12px;cursor:pointer;
+    color:var(--accent-fg);display:grid;place-items:center;box-shadow:var(--sh-sm);
+    background-image:linear-gradient(135deg,var(--accent),var(--accent-2));transition:filter .15s,transform .1s}
+  .send:hover{filter:brightness(1.1)}.send:active{transform:scale(.95)}
+  .send:disabled{opacity:.4;cursor:not-allowed;filter:none}
+  .hint{margin-top:8px;text-align:center;font-size:12px;color:var(--fg-faint)}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="wrap hbar">
+      <div class="brand">
+        <span class="mark">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path d="M12 3c4.97 0 9 3.58 9 8 0 4.42-4.03 8-9 8-1.04 0-2.05-.16-2.97-.45L4 21l1.4-3.6C4.52 16.07 3 14.18 3 11c0-4.42 4.03-8 9-8Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+          </svg>
+        </span>
+        <div><h1>COBOL Archaeologist</h1><p>Local model · chat</p></div>
+      </div>
+      <div class="pill" id="pill" title="">
+        <span class="dot" id="dot"></span>
+        <span style="display:flex;flex-direction:column;line-height:1.1">
+          <span class="lbl" id="state">Connecting…</span>
+          <span class="sub" id="meta">checking model…</span>
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <div class="scroll" id="scroll">
+    <div class="wrap">
+      <div class="log" id="log">
+        <div class="empty" id="empty">
+          <span class="mark">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
+              <path d="M12 3c4.97 0 9 3.58 9 8 0 4.42-4.03 8-9 8-1.04 0-2.05-.16-2.97-.45L4 21l1.4-3.6C4.52 16.07 3 14.18 3 11c0-4.42 4.03-8 9-8Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+            </svg>
+          </span>
+          <h2>COBOL Archaeologist</h2>
+          <p class="desc">A chat interface to a locally-hosted model that excavates business intent from fifty-year-old banking COBOL — explaining paragraphs, recovering the rules they encode, and writing them up in clean, formatted prose and code.</p>
+          <div class="caps">
+            <div class="cap"><b>Explain legacy code</b><p>Turn dense COBOL paragraphs into clear, plain-language summaries.</p></div>
+            <div class="cap"><b>Recover business intent</b><p>Surface the rules — balance checks, fees, KYC — hidden in the logic.</p></div>
+            <div class="cap"><b>Draft documentation</b><p>Generate readable notes, with formatted code and structured sections.</p></div>
+          </div>
+          <p class="tryl">Try asking</p>
+          <div class="chips" id="chips"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="composer">
+    <div class="wrap cwrap">
+      <div class="field">
+        <textarea id="box" rows="1" placeholder="Message COBOL Archaeologist…"></textarea>
+        <button class="send" id="send" aria-label="Send">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path d="M5 12h13M12 5l7 7-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+      <p class="hint">Enter to send · Shift+Enter for a new line · responses may be inaccurate</p>
+    </div>
+  </div>
+</div>
+
+<script>
+const API_URL = "http://localhost:8000";
+
+const EXAMPLES = [
+  "Explain what a COBOL paragraph does in plain English",
+  "What business rules might a late-fee routine encode?",
+  "Write a short Python function with docstring and example",
+  "Summarise the risks of an undocumented banking system"
+];
+
+const $ = id => document.getElementById(id);
+const dot=$('dot'),state=$('state'),meta=$('meta'),pill=$('pill'),
+      log=$('log'),empty=$('empty'),box=$('box'),sendBtn=$('send'),
+      scroll=$('scroll'),chips=$('chips');
+let healthOk=null, modelLoaded=false, sending=false;
+
+EXAMPLES.forEach(t=>{
+  const b=document.createElement('button');
+  b.className='chip'; b.textContent=t;
+  b.onclick=()=>{ if(!sending) send(t); };
+  chips.appendChild(b);
+});
+
+/* ---------- markdown ---------- */
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+function mdInline(s){
+  // s is already HTML-escaped
+  return s
+    .replace(/`([^`]+)`/g,(_,c)=>'<code class="inline">'+c+'</code>')
+    .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g,'<a href="$2" target="_blank" rel="noreferrer">$1</a>')
+    .replace(/\*\*([^*]+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/~~([^~]+?)~~/g,'<del>$1</del>')
+    .replace(/\*([^*\n]+?)\*/g,'<em>$1</em>');
+}
+
+function mdRender(src){
+  src=src.replace(/\r\n/g,'\n');
+  const lines=src.split('\n');
+  let html='', i=0;
+  const splitRow=r=>r.replace(/^\s*\|/,'').replace(/\|\s*$/,'').split('|').map(c=>c.trim());
+
+  while(i<lines.length){
+    let line=lines[i];
+
+    const fence=/^```(.*)$/.exec(line.trim());
+    if(fence){
+      const lang=fence[1].trim()||'code', buf=[];
+      i++;
+      while(i<lines.length && !/^```/.test(lines[i].trim())){ buf.push(lines[i]); i++; }
+      i++;
+      html+='<div class="codeblock"><div class="chead"><span class="clang">'+esc(lang)+
+        '</span><button class="ccopy" type="button">Copy</button></div><pre><code>'+
+        esc(buf.join('\n'))+'</code></pre></div>';
+      continue;
+    }
+    if(line.trim()===''){ i++; continue; }
+
+    const h=/^(#{1,6})\s+(.*)$/.exec(line);
+    if(h){ const n=h[1].length; html+='<h'+n+'>'+mdInline(esc(h[2]))+'</h'+n+'>'; i++; continue; }
+
+    if(/^\s*(-{3,}|\*{3,}|_{3,})\s*$/.test(line)){ html+='<hr>'; i++; continue; }
+
+    if(/^>\s?/.test(line)){
+      const buf=[];
+      while(i<lines.length && /^>\s?/.test(lines[i])){ buf.push(lines[i].replace(/^>\s?/,'')); i++; }
+      html+='<blockquote>'+mdRender(buf.join('\n'))+'</blockquote>';
+      continue;
+    }
+
+    if(line.includes('|') && i+1<lines.length &&
+       /^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)+\|?\s*$/.test(lines[i+1])){
+      const tbl=[];
+      while(i<lines.length && lines[i].includes('|') && lines[i].trim()!==''){ tbl.push(lines[i]); i++; }
+      const head=splitRow(tbl[0]), body=tbl.slice(2).map(splitRow);
+      html+='<table><thead><tr>'+head.map(c=>'<th>'+mdInline(esc(c))+'</th>').join('')+
+        '</tr></thead><tbody>'+body.map(r=>'<tr>'+r.map(c=>'<td>'+mdInline(esc(c))+'</td>').join('')+
+        '</tr>').join('')+'</tbody></table>';
+      continue;
+    }
+
+    if(/^(\s*)([-*+]|\d+[.)])\s+/.test(line)){
+      const ordered=/^\s*\d+[.)]\s+/.test(line);
+      const items=[];
+      while(i<lines.length && lines[i].trim()!=='' &&
+            (/^(\s*)([-*+]|\d+[.)])\s+/.test(lines[i]) || /^\s{2,}\S/.test(lines[i]))){
+        if(/^(\s*)([-*+]|\d+[.)])\s+/.test(lines[i]))
+          items.push(lines[i].replace(/^(\s*)([-*+]|\d+[.)])\s+/,''));
+        else if(items.length) items[items.length-1]+='\n'+lines[i].trim();
+        i++;
+      }
+      const tag=ordered?'ol':'ul';
+      html+='<'+tag+'>'+items.map(t=>'<li>'+mdInline(esc(t)).replace(/\n/g,'<br>')+'</li>').join('')+'</'+tag+'>';
+      continue;
+    }
+
+    const para=[];
+    while(i<lines.length && lines[i].trim()!=='' && !/^```/.test(lines[i].trim()) &&
+          !/^(#{1,6})\s+/.test(lines[i]) && !/^>\s?/.test(lines[i]) &&
+          !/^(\s*)([-*+]|\d+[.)])\s+/.test(lines[i]) &&
+          !/^\s*(-{3,}|\*{3,}|_{3,})\s*$/.test(lines[i])){
+      para.push(lines[i]); i++;
+    }
+    html+='<p>'+para.map(l=>mdInline(esc(l))).join('<br>')+'</p>';
+  }
+  return html;
+}
+
+/* ---------- chat ---------- */
+function refresh(){
+  const ok = healthOk===true && modelLoaded;
+  dot.className = 'dot ' + (healthOk===null ? '' : ok ? 'ok' : 'bad');
+  state.textContent = healthOk===null ? 'Connecting…' : ok ? 'Connected' : 'Disconnected';
+}
+
+async function init(){
+  try{
+    const r=await fetch(API_URL+'/health',{cache:'no-store'});
+    const b=await r.json().catch(()=>null);
+    healthOk = r.ok && b && (b.status==='ok'||b.ok===true);
+  }catch{ healthOk=false; }
+  try{
+    const r=await fetch(API_URL+'/model/status',{cache:'no-store'});
+    const b=await r.json();
+    modelLoaded = b.loaded===true;
+    const full = b.path || b.model_path || 'unknown model';
+    pill.title = full;
+    meta.textContent = full.split(/[/\\]/).slice(-1)[0] + ' · ' + (b.loaded?'loaded':'not loaded');
+  }catch{ meta.textContent='model status unavailable'; }
+  refresh();
+}
+
+function addUser(text){
+  if(empty) empty.remove();
+  const row=document.createElement('div'); row.className='row user';
+  const av=document.createElement('div'); av.className='av'; av.textContent='You';
+  const b=document.createElement('div'); b.className='bubble'; b.textContent=text;
+  row.append(av,b); log.appendChild(row);
+  scroll.scrollTo({top:scroll.scrollHeight,behavior:'smooth'});
+}
+
+function addModel(){
+  const row=document.createElement('div'); row.className='row model';
+  const av=document.createElement('div'); av.className='av'; av.textContent='AI';
+  const c=document.createElement('div'); c.className='content';
+  c.innerHTML='<div class="dots"><i></i><i></i><i></i></div>';
+  row.append(av,c); log.appendChild(row);
+  scroll.scrollTo({top:scroll.scrollHeight,behavior:'smooth'});
+  return c;
+}
+
+async function send(text){
+  const prompt=(text!==undefined?text:box.value).trim();
+  if(!prompt||sending) return;
+  sending=true; sendBtn.disabled=true;
+  addUser(prompt);
+  box.value=''; box.style.height='auto';
+  const c=addModel();
+  try{
+    const r=await fetch(API_URL+'/prompt',{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({prompt:prompt,max_tokens:512})});
+    if(!r.ok) throw new Error('API returned '+r.status);
+    const data=await r.json();
+    c.innerHTML = mdRender(data.response || '(empty response)');
+  }catch(e){
+    c.innerHTML = mdRender('⚠ Could not reach the model — ' +
+      (e&&e.message?e.message:'unknown error') + '. Is the backend running at `'+API_URL+'`?');
+  }finally{
+    sending=false; sendBtn.disabled=false;
+    scroll.scrollTo({top:scroll.scrollHeight,behavior:'smooth'});
+  }
+}
+
+log.addEventListener('click',e=>{
+  const btn=e.target.closest('.ccopy'); if(!btn) return;
+  const code=btn.closest('.codeblock').querySelector('code').textContent;
+  navigator.clipboard?.writeText(code).then(()=>{
+    btn.textContent='Copied'; setTimeout(()=>btn.textContent='Copy',1500);
+  },()=>{});
+});
+box.addEventListener('input',()=>{ box.style.height='auto'; box.style.height=Math.min(box.scrollHeight,200)+'px'; });
+box.addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();} });
+sendBtn.addEventListener('click',()=>send());
+init();
+</script>
+</body>
+</html>

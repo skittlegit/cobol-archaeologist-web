@@ -1,250 +1,287 @@
-import { api, Stats } from "@/lib/api";
-import Link from "next/link";
+"use client";
 
-const LABEL_META: Record<string, { hue: string; gloss: string }> = {
-  balance_check:          { hue: "#1f3a52", gloss: "Verifies funds before debit." },
-  late_fee:               { hue: "#8a5a00", gloss: "Penalises overdue obligations." },
-  kyc_screening:          { hue: "#5a2a4d", gloss: "Identifies the customer." },
-  interest_calculation:   { hue: "#1f4d3a", gloss: "Accrues time-value of money." },
-  loan_eligibility:       { hue: "#6b4f00", gloss: "Decides who may borrow." },
-  transaction_validation: { hue: "#7a1d1d", gloss: "Guards the ledger from bad input." },
-  fraud_check:            { hue: "#b8593e", gloss: "Flags unusual behaviour." },
-  payroll:                { hue: "#1f5d5a", gloss: "Pays the people." },
-  unlabeled:              { hue: "#a39b8e", gloss: "Awaiting classification." },
-};
+import { useCallback, useLayoutEffect, useRef, useState } from "react";
+import { api, API_URL } from "@/lib/api";
+import { Markdown } from "./_components/Markdown";
 
-function meta(l: string) {
-  return LABEL_META[l] ?? { hue: "#6b6557", gloss: "—" };
+type Role = "user" | "assistant";
+
+interface Message {
+  id: number;
+  role: Role;
+  text: string;
 }
 
-async function getStats(): Promise<Stats | null> {
-  try {
-    return await api.stats();
-  } catch {
-    return null;
+const EXAMPLES = [
+  "Explain what a COBOL paragraph does in plain English",
+  "What business rules might a late-fee routine encode?",
+  "Write a short Python function with docstring and example",
+  "Summarise the risks of an undocumented banking system",
+];
+
+const CAPABILITIES = [
+  {
+    title: "Explain legacy code",
+    body: "Turn dense COBOL paragraphs into clear, plain-language summaries.",
+  },
+  {
+    title: "Recover business intent",
+    body: "Surface the rules — balance checks, fees, KYC — hidden in the logic.",
+  },
+  {
+    title: "Draft documentation",
+    body: "Generate readable notes, with formatted code and structured sections.",
+  },
+];
+
+export default function ChatPage() {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState("");
+  const [sending, setSending] = useState(false);
+
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const taRef = useRef<HTMLTextAreaElement>(null);
+  const idRef = useRef(0);
+
+  useLayoutEffect(() => {
+    const el = scrollRef.current;
+    if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+  }, [messages, sending]);
+
+  useLayoutEffect(() => {
+    const ta = taRef.current;
+    if (!ta) return;
+    ta.style.height = "0px";
+    ta.style.height = Math.min(ta.scrollHeight, 200) + "px";
+  }, [input]);
+
+  const empty = messages.length === 0 && !sending;
+
+  const send = useCallback(
+    async (text?: string) => {
+      const prompt = (text ?? input).trim();
+      if (!prompt || sending) return;
+
+      setMessages((m) => [
+        ...m,
+        { id: ++idRef.current, role: "user", text: prompt },
+      ]);
+      setInput("");
+      setSending(true);
+
+      try {
+        const data = await api.prompt(prompt, 512);
+        setMessages((m) => [
+          ...m,
+          {
+            id: ++idRef.current,
+            role: "assistant",
+            text: data.response || "(empty response)",
+          },
+        ]);
+      } catch (err) {
+        setMessages((m) => [
+          ...m,
+          {
+            id: ++idRef.current,
+            role: "assistant",
+            text:
+              "⚠ Could not reach the model — " +
+              (err instanceof Error ? err.message : "unknown error") +
+              `. Is the backend running at \`${API_URL}\`?`,
+          },
+        ]);
+      } finally {
+        setSending(false);
+      }
+    },
+    [input, sending],
+  );
+
+  function onKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      send();
+    }
   }
-}
-
-export default async function Home() {
-  const stats = await getStats();
 
   return (
-    <div className="rise space-y-16">
-      {/* ----- Masthead ----- */}
-      <section className="relative">
-        <div className="flex items-center gap-3 text-ink-3">
-          <span className="eyebrow">A research interface</span>
-          <span className="h-px flex-1 bg-rule" />
-          <span className="eyebrow">Banking · COBOL · Regulation</span>
+    <div className="flex h-full flex-col">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto">
+        <div
+          className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6"
+          aria-live="polite"
+        >
+          {empty ? (
+            <Welcome onPick={(t) => send(t)} />
+          ) : (
+            <div className="flex flex-col gap-7">
+              {messages.map((m) =>
+                m.role === "user" ? (
+                  <UserMessage key={m.id} text={m.text} />
+                ) : (
+                  <AssistantMessage key={m.id} text={m.text} />
+                ),
+              )}
+              {sending && <Thinking />}
+            </div>
+          )}
         </div>
+      </div>
 
-        <h1 className="font-display mt-8 text-[clamp(2.75rem,7vw,5.5rem)] leading-[0.95] font-normal">
-          The business intent<br />
-          <span className="italic text-accent">hidden in legacy code.</span>
-        </h1>
-
-        <div className="mt-8 grid md:grid-cols-12 gap-8 items-start">
-          <p className="md:col-span-7 text-lg text-ink-2 leading-relaxed max-w-2xl">
-            COBOL Archaeologist excavates fifty-year-old banking programs and
-            recovers the rules they encode — the balance checks, the fee
-            schedules, the KYC screens — and links each fragment back to the
-            regulations it once obeyed.
-          </p>
-          <div className="md:col-span-5 md:pl-8 md:border-l border-rule space-y-3 text-sm text-ink-3">
-            <p>
-              <span className="eyebrow block mb-1">Method</span>
-              Static parsing → weak labelling → LLM-assisted intent inference,
-              cross-referenced with primary regulatory sources.
-            </p>
-            <p>
-              <span className="eyebrow block mb-1">Corpus</span>
-              Real-world banking COBOL: ledger postings, interest accrual,
-              KYC screening, payroll, late-fee assessment.
-            </p>
+      <div className="border-t border-border bg-bg/60">
+        <div className="mx-auto w-full max-w-3xl px-4 py-4 sm:px-6">
+          <div className="flex items-end gap-2 rounded-2xl border border-border bg-surface p-2 shadow-[var(--shadow-md)] transition-shadow focus-within:border-accent/40 focus-within:shadow-[var(--shadow-lg)]">
+            <textarea
+              ref={taRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={onKeyDown}
+              rows={1}
+              placeholder="Message COBOL Archaeologist…"
+              aria-label="Message"
+              className="max-h-[200px] flex-1 resize-none bg-transparent px-3 py-2.5 text-[15px] leading-relaxed text-fg placeholder:text-fg-faint focus:outline-none"
+            />
+            <button
+              onClick={() => send()}
+              disabled={sending || !input.trim()}
+              aria-label="Send message"
+              className="accent-grad grid h-10 w-10 shrink-0 place-items-center rounded-xl text-accent-fg shadow-[var(--shadow-sm)] transition-all hover:brightness-110 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:brightness-100"
+            >
+              {sending ? (
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+              ) : (
+                <SendIcon />
+              )}
+            </button>
           </div>
-        </div>
-
-        <div className="mt-10 flex flex-wrap items-center gap-3">
-          <Link
-            href="/blocks"
-            className="group inline-flex items-center gap-3 rounded-sm bg-ink text-paper px-5 py-3 text-sm font-medium hover:bg-accent-ink transition-colors"
-          >
-            <span className="eyebrow text-[10px] text-paper/60">02</span>
-            Browse the catalogue
-            <span className="transition-transform group-hover:translate-x-1">→</span>
-          </Link>
-          <Link
-            href="/search"
-            className="group inline-flex items-center gap-3 rounded-sm border border-ink/20 px-5 py-3 text-sm font-medium hover:border-ink transition-colors"
-          >
-            <span className="eyebrow text-[10px]">03</span>
-            Search regulations
-          </Link>
-        </div>
-      </section>
-
-      {!stats && (
-        <section className="rounded-sm border border-bad/30 bg-[var(--bad-soft)] p-6">
-          <p className="eyebrow text-[var(--bad)] mb-2">Connection error</p>
-          <p className="text-sm text-ink-2">
-            Could not reach the API. Make sure the Python backend is running on{" "}
-            <code className="font-mono px-1.5 py-0.5 rounded bg-card border border-rule">
-              {process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}
-            </code>
-            .
+          <p className="mt-2 px-1 text-center text-xs text-fg-faint">
+            Enter to send · Shift+Enter for a new line · responses may be
+            inaccurate
           </p>
-        </section>
-      )}
-
-      {stats && (
-        <>
-          {/* ----- Ledger figures ----- */}
-          <section>
-            <SectionHeading number="§ 01" title="The corpus, in figures" />
-            <div className="mt-8 grid grid-cols-2 lg:grid-cols-4 border-t border-b border-rule">
-              {[
-                { label: "Logic Blocks",    value: stats.total_blocks, hint: "extracted paragraphs" },
-                { label: "Intent Cards",    value: stats.total_cards,  hint: "what · why · evidence" },
-                {
-                  label: "Labelled Blocks",
-                  value: Object.entries(stats.label_distribution).filter(([k]) => k !== "unlabeled").reduce((s, [, v]) => s + v, 0),
-                  hint: "weak supervision",
-                },
-                { label: "Distinct Labels", value: Object.keys(stats.label_distribution).length, hint: "business categories" },
-              ].map((kpi, i) => (
-                <div
-                  key={kpi.label}
-                  className={`relative px-6 py-7 ${i > 0 ? "lg:border-l border-rule" : ""} ${
-                    i === 1 ? "border-l border-rule lg:border-l" : ""
-                  } ${i >= 2 ? "border-t lg:border-t-0 border-rule" : ""}`}
-                >
-                  <p className="eyebrow">{kpi.label}</p>
-                  <p className="font-display num mt-3 text-5xl lg:text-6xl font-medium leading-none tracking-tight">
-                    {kpi.value.toLocaleString()}
-                  </p>
-                  <p className="mt-3 text-xs text-ink-3">{kpi.hint}</p>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          {/* ----- Distribution + Files ----- */}
-          <section className="grid gap-12 lg:grid-cols-12">
-            <div className="lg:col-span-7">
-              <SectionHeading number="§ 02" title="Distribution by intent" subtitle="Across all logic blocks" />
-              <ul className="mt-8 divide-y divide-rule border-t border-b border-rule">
-                {Object.entries(stats.label_distribution)
-                  .sort(([, a], [, b]) => b - a)
-                  .map(([label, count], i) => {
-                    const pct = (count / stats.total_blocks) * 100;
-                    const m = meta(label);
-                    return (
-                      <li key={label} className="group grid grid-cols-12 items-center gap-4 py-4">
-                        <span className="col-span-1 eyebrow num text-ink-4">
-                          {String(i + 1).padStart(2, "0")}
-                        </span>
-                        <div className="col-span-5 sm:col-span-4">
-                          <p className="font-display text-lg leading-none">
-                            {label.replace(/_/g, " ")}
-                          </p>
-                          <p className="mt-1 text-xs text-ink-3 hidden sm:block">{m.gloss}</p>
-                        </div>
-                        <div className="col-span-4 sm:col-span-5 h-[3px] bg-rule relative overflow-hidden">
-                          <span
-                            className="absolute inset-y-0 left-0 transition-[width] duration-700"
-                            style={{ width: `${pct}%`, background: m.hue }}
-                          />
-                        </div>
-                        <span className="col-span-2 sm:col-span-2 text-right num text-sm">
-                          <span className="font-medium">{count.toLocaleString()}</span>
-                          <span className="text-ink-4 ml-2 text-xs">{pct.toFixed(1)}%</span>
-                        </span>
-                      </li>
-                    );
-                  })}
-              </ul>
-            </div>
-
-            <div className="lg:col-span-5">
-              <SectionHeading number="§ 03" title="Top files in the dig" subtitle="By block density" />
-              <ol className="mt-8 space-y-1">
-                {stats.top_files.map((f, i) => (
-                  <li
-                    key={f.file}
-                    className="group flex items-baseline gap-4 py-3 border-b border-dashed border-rule hover:border-ink-3 transition-colors"
-                  >
-                    <span className="eyebrow num text-ink-4 w-8 shrink-0">
-                      {String(i + 1).padStart(2, "0")}
-                    </span>
-                    <span className="font-mono text-sm flex-1 truncate text-ink-2 group-hover:text-ink">
-                      {f.file.split(/[/\\]/).slice(-1)[0]}
-                    </span>
-                    <span className="num text-sm tabular-nums text-ink-3">
-                      <span className="text-ink font-medium">{f.count}</span>
-                      <span className="ml-1.5 text-ink-4">blocks</span>
-                    </span>
-                  </li>
-                ))}
-              </ol>
-            </div>
-          </section>
-
-          {/* ----- Pull quote ----- */}
-          <section className="relative py-12 px-2 sm:px-12 border-y border-rule">
-            <span aria-hidden className="absolute -top-4 left-4 font-display text-[10rem] leading-none text-accent/20 select-none">“</span>
-            <blockquote className="font-display text-2xl md:text-[2rem] leading-snug max-w-3xl text-ink-2 relative">
-              Every <em>IF</em> in a fifty-year-old paragraph was once a
-              regulatory clause, a customer complaint, or a midnight patch
-              someone signed off on a fax.
-            </blockquote>
-            <p className="eyebrow mt-6">— Editorial note</p>
-          </section>
-
-          {/* ----- Method ----- */}
-          <section>
-            <SectionHeading number="§ 04" title="How a block becomes an intent card" />
-            <ol className="mt-8 grid gap-6 md:grid-cols-3">
-              {[
-                { n: "i.",   t: "Excavate", d: "Parse the program. Cut paragraphs into self-contained logic blocks. Record reads, writes, conditions, performs." },
-                { n: "ii.",  t: "Classify", d: "Apply weakly-supervised labels — balance check, KYC screen, late fee — based on variables, conditions, and copybooks." },
-                { n: "iii.", t: "Interpret", d: "Generate an intent card: the what, the why, the regulatory anchor — with a confidence the analyst can trust or override." },
-              ].map((s) => (
-                <li key={s.t} className="border-t border-ink pt-5">
-                  <span className="eyebrow">{s.n}</span>
-                  <h3 className="font-display text-2xl mt-2">{s.t}</h3>
-                  <p className="text-sm text-ink-2 mt-3 leading-relaxed">{s.d}</p>
-                </li>
-              ))}
-            </ol>
-          </section>
-        </>
-      )}
+        </div>
+      </div>
     </div>
   );
 }
 
-function SectionHeading({
-  number,
-  title,
-  subtitle,
-}: {
-  number: string;
-  title: string;
-  subtitle?: string;
-}) {
+function Welcome({ onPick }: { onPick: (t: string) => void }) {
   return (
-    <div className="flex items-end justify-between gap-4 border-b border-ink pb-3">
-      <div>
-        <p className="eyebrow">{number}</p>
-        <h2 className="font-display mt-1 text-3xl md:text-4xl leading-none">
-          {title}
-        </h2>
+    <div className="flex min-h-[64dvh] flex-col items-center justify-center py-8 text-center">
+      <span className="accent-grad mb-6 grid h-16 w-16 place-items-center rounded-2xl text-accent-fg shadow-[var(--shadow-md)]">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" aria-hidden>
+          <path
+            d="M12 3c4.97 0 9 3.58 9 8 0 4.42-4.03 8-9 8-1.04 0-2.05-.16-2.97-.45L4 21l1.4-3.6C4.52 16.07 3 14.18 3 11c0-4.42 4.03-8 9-8Z"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </span>
+      <h2 className="text-[1.7rem] font-semibold tracking-tight sm:text-3xl">
+        COBOL Archaeologist
+      </h2>
+      <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-fg-muted">
+        A chat interface to a locally-hosted model that excavates business
+        intent from fifty-year-old banking COBOL — explaining paragraphs,
+        recovering the rules they encode, and writing them up in clean,
+        formatted prose and code.
+      </p>
+
+      <div className="mt-9 grid w-full max-w-2xl gap-3 sm:grid-cols-3">
+        {CAPABILITIES.map((c) => (
+          <div
+            key={c.title}
+            className="rounded-xl border border-border bg-surface p-4 text-left shadow-[var(--shadow-sm)]"
+          >
+            <p className="text-sm font-semibold">{c.title}</p>
+            <p className="mt-1.5 text-[13px] leading-relaxed text-fg-muted">
+              {c.body}
+            </p>
+          </div>
+        ))}
       </div>
-      {subtitle && (
-        <p className="hidden sm:block text-sm text-ink-3 italic font-display">
-          {subtitle}
-        </p>
-      )}
+
+      <p className="mt-10 text-xs font-medium uppercase tracking-wider text-fg-faint">
+        Try asking
+      </p>
+      <div className="mt-3 flex flex-wrap justify-center gap-2">
+        {EXAMPLES.map((ex) => (
+          <button
+            key={ex}
+            onClick={() => onPick(ex)}
+            className="rounded-full border border-border bg-surface px-3.5 py-2 text-[13px] text-fg-muted shadow-[var(--shadow-sm)] transition-colors hover:border-accent/40 hover:text-fg"
+          >
+            {ex}
+          </button>
+        ))}
+      </div>
     </div>
+  );
+}
+
+function UserMessage({ text }: { text: string }) {
+  return (
+    <div className="msg-in flex flex-row-reverse gap-3">
+      <div
+        className="accent-grad mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-lg text-[11px] font-semibold text-accent-fg"
+        aria-hidden
+      >
+        You
+      </div>
+      <div className="accent-grad max-w-[78%] whitespace-pre-wrap rounded-2xl rounded-tr-md px-4 py-2.5 text-[15px] leading-relaxed text-accent-fg shadow-[var(--shadow-sm)]">
+        {text}
+      </div>
+    </div>
+  );
+}
+
+function AssistantMessage({ text }: { text: string }) {
+  return (
+    <div className="msg-in flex flex-row gap-3">
+      <div
+        className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-lg border border-border bg-surface-2 text-[11px] font-semibold text-fg-muted"
+        aria-hidden
+      >
+        AI
+      </div>
+      <div className="min-w-0 flex-1 pt-0.5 text-fg">
+        <Markdown content={text} />
+      </div>
+    </div>
+  );
+}
+
+function Thinking() {
+  return (
+    <div className="msg-in flex flex-row gap-3">
+      <div
+        className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-lg border border-border bg-surface-2 text-[11px] font-semibold text-fg-muted"
+        aria-hidden
+      >
+        AI
+      </div>
+      <div className="flex h-7 items-center">
+        <span className="dots flex items-center gap-1.5" aria-label="Thinking">
+          <span />
+          <span />
+          <span />
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function SendIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M5 12h13M12 5l7 7-7 7"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
   );
 }
