@@ -196,9 +196,9 @@ function Blocks({ src }: { src: string }) {
   let i = 0;
 
   const heads = [
-    "text-[1.35rem] font-semibold mt-5 mb-2.5 tracking-tight",
-    "text-[1.15rem] font-semibold mt-5 mb-2 tracking-tight",
-    "text-[1rem] font-semibold mt-4 mb-1.5",
+    "font-display text-[1.5rem] mt-6 mb-2.5 leading-tight",
+    "font-display text-[1.25rem] mt-5 mb-2 leading-tight",
+    "font-display text-[1.05rem] mt-4 mb-1.5",
     "text-[0.9rem] font-semibold mt-3 mb-1.5",
     "text-[0.8rem] font-semibold uppercase tracking-wide text-fg-muted mt-3 mb-1",
     "text-[0.8rem] font-semibold uppercase tracking-wide text-fg-faint mt-3 mb-1",

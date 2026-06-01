@@ -132,4 +132,39 @@ export const api = {
       { method: "POST", body: JSON.stringify({ prompt, max_tokens: maxTokens }) },
       180000,
     ),
+
+  // Inference can take minutes on local hardware — long timeout.
+  analyse: (
+    code: string,
+    opts: { paragraph?: string; backend?: string } = {},
+  ) =>
+    j<BusinessIntentCard>(
+      "/analyse",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          code,
+          paragraph: opts.paragraph || "FREEFORM",
+          backend: opts.backend || "ollama",
+        }),
+      },
+      180000,
+    ),
+
+  infer: (blockId: string, backend = "ollama") =>
+    j<BusinessIntentCard>(
+      `/infer/${encodeURIComponent(blockId)}`,
+      { method: "POST", body: JSON.stringify({ backend }) },
+      180000,
+    ),
 };
+
+/** Turn a raw client error into a short, human message. */
+export function friendlyError(e: unknown): string {
+  const msg = String(e);
+  if (/TimeoutError|timed out|504/.test(msg))
+    return "The model timed out — inference can take a while on local hardware. Try again.";
+  if (/fetch failed|ECONNREFUSED|Failed to fetch|NetworkError/.test(msg))
+    return `Cannot reach the backend at ${API_URL}. Is it running and tunnelled?`;
+  return msg.replace(/^Error:\s*/, "");
+}

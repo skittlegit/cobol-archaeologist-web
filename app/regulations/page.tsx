@@ -2,12 +2,30 @@
 
 import { useEffect, useState } from "react";
 import { api, type RegSearchHit } from "@/lib/api";
+import { PageHeader } from "../_components/PageHeader";
 
 const EXAMPLES = [
   "KYC customer due diligence",
   "interest calculation on overdue accounts",
   "transaction monitoring and fraud",
   "loan eligibility criteria",
+  "record retention requirements",
+  "periodic KYC updation",
+];
+
+const TOPICS = [
+  {
+    title: "Know Your Customer",
+    body: "Identification, due diligence, periodic updation and the CKYCR registry.",
+  },
+  {
+    title: "AML & Monitoring",
+    body: "Transaction monitoring, suspicious activity, and fraud-control obligations.",
+  },
+  {
+    title: "Credit & Interest",
+    body: "Eligibility, accrual on overdue balances, and fair-lending conduct.",
+  },
 ];
 
 export default function RegulationsPage() {
@@ -49,57 +67,115 @@ export default function RegulationsPage() {
     setQuery(t);
   }
 
+  const showIntro = !searched && !loading && !error;
+
   return (
     <div className="h-full overflow-y-auto">
-      <div className="mx-auto w-full max-w-4xl px-5 py-8 lg:px-8">
-        <header>
-          <h1 className="text-2xl font-semibold tracking-tight">
-            Regulations
-          </h1>
-          <p className="mt-1.5 text-sm text-fg-muted">
-            Semantic search over primary regulatory sources — the rules legacy
-            banking code was written to obey.
-          </p>
-        </header>
+      <div className="mx-auto w-full max-w-6xl px-6 py-14 lg:px-10">
+        <PageHeader
+          eyebrow="§ Regulatory corpus"
+          title="Regulations"
+          lead="Semantic search over primary regulatory sources — the rules legacy banking code was written to obey. Queries are matched by meaning, not keywords."
+        />
 
         <form
           onSubmit={(e) => {
             e.preventDefault();
             run(qInput);
           }}
-          className="mt-6 flex gap-2"
+          className="mt-10 flex items-end gap-6"
         >
-          <input
-            value={qInput}
-            onChange={(e) => setQInput(e.target.value)}
-            placeholder="Search regulations…"
-            className="flex-1 rounded-xl border border-border bg-surface px-4 py-3 text-sm shadow-[var(--shadow-sm)] outline-none transition-colors focus:border-accent/40"
-          />
+          <div className="flex-1">
+            <label className="eyebrow mb-2 block">Search by meaning</label>
+            <input
+              value={qInput}
+              onChange={(e) => setQInput(e.target.value)}
+              placeholder="e.g. periodic KYC updation"
+              className="w-full border-b border-fg bg-transparent pb-2 text-sm outline-none placeholder:text-fg-faint"
+            />
+          </div>
           <button
             type="submit"
             disabled={loading || !qInput.trim()}
-            className="accent-grad rounded-xl px-5 text-sm font-medium text-accent-fg shadow-[var(--shadow-sm)] transition-all hover:brightness-110 disabled:opacity-40"
+            className="border border-fg px-5 py-2.5 text-sm hover:enabled:bg-fg hover:enabled:text-paper disabled:opacity-40"
           >
             {loading ? "Searching…" : "Search"}
           </button>
         </form>
 
-        {!searched && !loading && (
-          <div className="mt-4 flex flex-wrap gap-2">
-            {EXAMPLES.map((ex) => (
-              <button
-                key={ex}
-                onClick={() => run(ex)}
-                className="rounded-full border border-border bg-surface px-3.5 py-2 text-[13px] text-fg-muted shadow-[var(--shadow-sm)] transition-colors hover:border-accent/40 hover:text-fg"
-              >
-                {ex}
-              </button>
-            ))}
+        {/* ---------- intro / empty state ---------- */}
+        {showIntro && (
+          <div className="mt-10 space-y-12">
+            <section>
+              <p className="eyebrow">Popular queries</p>
+              <ul className="mt-4 divide-y divide-rule border-y border-rule">
+                {EXAMPLES.map((ex) => (
+                  <li key={ex}>
+                    <button
+                      onClick={() => run(ex)}
+                      className="group flex w-full items-center gap-4 py-3 text-left"
+                    >
+                      <span className="text-accent transition-transform group-hover:translate-x-0.5">
+                        →
+                      </span>
+                      <span className="text-[15px] text-fg-muted group-hover:text-fg">
+                        {ex}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </section>
+
+            <section>
+              <p className="eyebrow">What you can explore</p>
+              <div className="mt-5 grid gap-x-10 gap-y-7 sm:grid-cols-3">
+                {TOPICS.map((t) => (
+                  <div key={t.title} className="border-t border-fg pt-4">
+                    <p className="font-display text-xl">{t.title}</p>
+                    <p className="mt-2 text-[13px] leading-relaxed text-fg-muted">
+                      {t.body}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <section>
+              <p className="eyebrow">How the search works</p>
+              <div className="mt-5 grid gap-x-10 gap-y-7 sm:grid-cols-3">
+                {[
+                  {
+                    n: "i.",
+                    t: "Embed the query",
+                    d: "Your phrase is turned into a vector that captures its meaning.",
+                  },
+                  {
+                    n: "ii.",
+                    t: "Rank passages",
+                    d: "Regulatory chunks are scored by semantic similarity.",
+                  },
+                  {
+                    n: "iii.",
+                    t: "Return sources",
+                    d: "The closest passages come back with source, page and score.",
+                  },
+                ].map((s) => (
+                  <div key={s.n}>
+                    <span className="eyebrow text-accent">{s.n}</span>
+                    <p className="font-display mt-2 text-lg">{s.t}</p>
+                    <p className="mt-1.5 text-[13px] leading-relaxed text-fg-muted">
+                      {s.d}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </section>
           </div>
         )}
 
         {error && (
-          <div className="mt-8 rounded-xl border border-border bg-surface p-6 text-sm text-fg-muted">
+          <div className="mt-8 rounded-xl border border-rule bg-surface p-6 text-sm text-fg-muted">
             Search failed: {error}
           </div>
         )}
@@ -109,20 +185,25 @@ export default function RegulationsPage() {
             {Array.from({ length: 4 }).map((_, i) => (
               <div
                 key={i}
-                className="h-28 animate-pulse rounded-2xl border border-border bg-surface-2"
+                className="h-28 animate-pulse rounded-2xl border border-rule bg-surface-2"
               />
             ))}
           </div>
         )}
 
         {!loading && searched && hits.length === 0 && !error && (
-          <div className="mt-10 text-center text-sm text-fg-muted">
-            No matching passages found.
+          <div className="mt-10 rounded-2xl border border-dashed border-rule bg-surface/60 p-10 text-center">
+            <p className="text-sm font-medium text-fg-muted">
+              No matching passages found
+            </p>
+            <p className="mt-1 text-xs text-fg-faint">
+              Try a broader phrase or one of the popular queries above.
+            </p>
           </div>
         )}
 
         {!loading && hits.length > 0 && (
-          <div className="mt-6 space-y-3">
+          <div className="mt-6 space-y-3 pb-6">
             <p className="text-xs uppercase tracking-wider text-fg-faint">
               {hits.length} passages · best matches first
             </p>
@@ -142,7 +223,7 @@ function Hit({ hit }: { hit: RegSearchHit }) {
   const pct = Math.round(Math.max(0, Math.min(1, hit.score)) * 100);
 
   return (
-    <article className="rounded-2xl border border-border bg-surface p-5 shadow-[var(--shadow-sm)]">
+    <article className="rounded-2xl border border-rule bg-surface p-5 shadow-[var(--shadow-sm)] transition-shadow hover:shadow-[var(--shadow-md)]">
       <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1.5">
         <span className="text-sm font-semibold">{hit.source}</span>
         {hit.section && (
@@ -156,7 +237,7 @@ function Hit({ hit }: { hit: RegSearchHit }) {
         <span className="ml-auto flex items-center gap-2">
           <span className="h-1.5 w-24 overflow-hidden rounded-full bg-surface-2">
             <span
-              className="accent-grad block h-full"
+              className="block h-full bg-accent"
               style={{ width: `${pct}%` }}
             />
           </span>
