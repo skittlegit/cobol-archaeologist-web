@@ -5,16 +5,13 @@ import React, { useState } from "react";
 /* ============================================================
    Lightweight, dependency-free Markdown renderer.
    Renders to React elements (no HTML injection) so it is XSS-safe.
-   Supports: headings, bold/italic/strike, inline code, links,
-   fenced code blocks, blockquotes, ordered/unordered (nested)
-   lists, GFM tables, horizontal rules.
+   Styled for the editorial / archival theme.
    ============================================================ */
 
 let k = 0;
 const key = () => k++;
 
 /* ---------- inline ---------- */
-
 function inline(text: string): React.ReactNode {
   const out: React.ReactNode[] = [];
   let rest = text;
@@ -33,7 +30,7 @@ function inline(text: string): React.ReactNode {
     take(/`([^`]+)`/.exec(rest), (m) => (
       <code
         key={key()}
-        className="rounded-md border border-border bg-surface-2 px-1.5 py-0.5 font-mono text-[0.85em]"
+        className="rounded-sm border border-rule bg-paper-2 px-1.5 py-0.5 font-mono text-[0.85em] text-accent-ink"
       >
         {m[1]}
       </code>
@@ -44,13 +41,13 @@ function inline(text: string): React.ReactNode {
         href={m[2]}
         target="_blank"
         rel="noreferrer"
-        className="text-accent underline underline-offset-2 hover:opacity-80"
+        className="link text-accent"
       >
         {inline(m[1])}
       </a>
     ));
     take(/\*\*([\s\S]+?)\*\*/.exec(rest), (m) => (
-      <strong key={key()} className="font-semibold">
+      <strong key={key()} className="font-semibold text-ink">
         {inline(m[1])}
       </strong>
     ));
@@ -59,9 +56,7 @@ function inline(text: string): React.ReactNode {
         {inline(m[1])}
       </span>
     ));
-    take(/\*([^*\n]+?)\*/.exec(rest), (m) => (
-      <em key={key()}>{inline(m[1])}</em>
-    ));
+    take(/\*([^*\n]+?)\*/.exec(rest), (m) => <em key={key()}>{inline(m[1])}</em>);
 
     if (!best) {
       out.push(rest);
@@ -76,15 +71,12 @@ function inline(text: string): React.ReactNode {
 }
 
 /* ---------- code block ---------- */
-
 function CodeBlock({ code, lang }: { code: string; lang: string }) {
   const [copied, setCopied] = useState(false);
   return (
-    <div className="my-3.5 overflow-hidden rounded-xl border border-border bg-surface-2">
-      <div className="flex items-center justify-between border-b border-border px-3.5 py-2">
-        <span className="font-mono text-[11px] uppercase tracking-wider text-fg-faint">
-          {lang || "code"}
-        </span>
+    <div className="my-3.5 overflow-hidden rounded-sm border border-rule bg-paper-2">
+      <div className="flex items-center justify-between border-b border-rule px-3.5 py-2">
+        <span className="eyebrow text-[10px]">{lang || "code"}</span>
         <button
           type="button"
           onClick={() => {
@@ -96,26 +88,21 @@ function CodeBlock({ code, lang }: { code: string; lang: string }) {
               () => {},
             );
           }}
-          className="flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] font-medium text-fg-muted transition-colors hover:bg-bg hover:text-fg"
+          className="font-mono text-[11px] text-ink-3 transition-colors hover:text-ink"
         >
-          {copied ? "Copied" : "Copy"}
+          {copied ? "copied" : "copy"}
         </button>
       </div>
       <pre className="overflow-x-auto p-4 text-[13px] leading-relaxed">
-        <code className="font-mono">{code}</code>
+        <code className="font-mono text-ink-2">{code}</code>
       </pre>
     </div>
   );
 }
 
 /* ---------- table ---------- */
-
 function splitRow(row: string): string[] {
-  return row
-    .replace(/^\s*\|/, "")
-    .replace(/\|\s*$/, "")
-    .split("|")
-    .map((c) => c.trim());
+  return row.replace(/^\s*\|/, "").replace(/\|\s*$/, "").split("|").map((c) => c.trim());
 }
 
 function Table({ rows }: { rows: string[] }) {
@@ -127,10 +114,7 @@ function Table({ rows }: { rows: string[] }) {
         <thead>
           <tr>
             {header.map((c, i) => (
-              <th
-                key={i}
-                className="border border-border bg-surface-2 px-3 py-2 text-left font-semibold"
-              >
+              <th key={i} className="border border-rule bg-paper-2 px-3 py-2 text-left font-semibold">
                 {inline(c)}
               </th>
             ))}
@@ -140,7 +124,7 @@ function Table({ rows }: { rows: string[] }) {
           {body.map((r, ri) => (
             <tr key={ri}>
               {r.map((c, ci) => (
-                <td key={ci} className="border border-border px-3 py-2 align-top">
+                <td key={ci} className="border border-rule px-3 py-2 align-top">
                   {inline(c)}
                 </td>
               ))}
@@ -153,33 +137,22 @@ function Table({ rows }: { rows: string[] }) {
 }
 
 /* ---------- list ---------- */
-
 function List({ lines }: { lines: string[] }) {
-  const base = lines.reduce(
-    (min, l) => Math.min(min, /^(\s*)/.exec(l)![1].length),
-    Infinity,
-  );
+  const base = lines.reduce((min, l) => Math.min(min, /^(\s*)/.exec(l)![1].length), Infinity);
   const ordered = new RegExp(`^\\s{${base}}\\d+[.)]\\s+`).test(lines[0]);
   const itemRe = new RegExp(`^\\s{${base}}([-*+]|\\d+[.)])\\s+`);
 
   const items: { text: string; sub: string[] }[] = [];
   for (const raw of lines) {
-    if (itemRe.test(raw)) {
-      items.push({ text: raw.replace(itemRe, ""), sub: [] });
-    } else if (items.length) {
-      items[items.length - 1].sub.push(raw.slice(base + 2));
-    }
+    if (itemRe.test(raw)) items.push({ text: raw.replace(itemRe, ""), sub: [] });
+    else if (items.length) items[items.length - 1].sub.push(raw.slice(base + 2));
   }
 
   const Tag = ordered ? "ol" : "ul";
   return (
-    <Tag
-      className={`my-2.5 space-y-1.5 pl-5 ${
-        ordered ? "list-decimal" : "list-disc"
-      } marker:text-fg-faint`}
-    >
+    <Tag className={`my-2.5 space-y-1.5 pl-5 ${ordered ? "list-decimal" : "list-disc"} marker:text-ink-4`}>
       {items.map((it, i) => (
-        <li key={i} className="pl-1 text-[15px] leading-relaxed">
+        <li key={i} className="pl-1 leading-relaxed">
           {inline(it.text)}
           {it.sub.length > 0 && <Blocks src={it.sub.join("\n")} />}
         </li>
@@ -189,19 +162,18 @@ function List({ lines }: { lines: string[] }) {
 }
 
 /* ---------- block parser ---------- */
-
 function Blocks({ src }: { src: string }) {
   const lines = src.replace(/\r\n/g, "\n").split("\n");
   const nodes: React.ReactNode[] = [];
   let i = 0;
 
   const heads = [
-    "font-display text-[1.5rem] mt-6 mb-2.5 leading-tight",
-    "font-display text-[1.25rem] mt-5 mb-2 leading-tight",
-    "font-display text-[1.05rem] mt-4 mb-1.5",
-    "text-[0.9rem] font-semibold mt-3 mb-1.5",
-    "text-[0.8rem] font-semibold uppercase tracking-wide text-fg-muted mt-3 mb-1",
-    "text-[0.8rem] font-semibold uppercase tracking-wide text-fg-faint mt-3 mb-1",
+    "font-display text-[1.6rem] mt-6 mb-2.5 leading-tight",
+    "font-display text-[1.3rem] mt-5 mb-2 leading-tight",
+    "font-display text-[1.1rem] mt-4 mb-1.5",
+    "text-[0.95rem] font-semibold mt-3 mb-1.5",
+    "eyebrow mt-3 mb-1",
+    "eyebrow text-ink-4 mt-3 mb-1",
   ];
 
   while (i < lines.length) {
@@ -230,17 +202,13 @@ function Blocks({ src }: { src: string }) {
     if (h) {
       const lvl = h[1].length;
       const Tag = `h${Math.min(lvl, 4)}` as "h1" | "h2" | "h3" | "h4";
-      nodes.push(
-        <Tag key={key()} className={heads[lvl - 1]}>
-          {inline(h[2])}
-        </Tag>,
-      );
+      nodes.push(<Tag key={key()} className={heads[lvl - 1]}>{inline(h[2])}</Tag>);
       i++;
       continue;
     }
 
     if (/^\s*(-{3,}|\*{3,}|_{3,})\s*$/.test(line)) {
-      nodes.push(<hr key={key()} className="my-5 border-border" />);
+      nodes.push(<hr key={key()} className="my-5 border-rule" />);
       i++;
       continue;
     }
@@ -252,10 +220,7 @@ function Blocks({ src }: { src: string }) {
         i++;
       }
       nodes.push(
-        <blockquote
-          key={key()}
-          className="my-3 border-l-[3px] border-accent/40 pl-4 text-fg-muted"
-        >
+        <blockquote key={key()} className="my-3 border-l-2 border-accent pl-4 text-ink-2 italic">
           <Blocks src={buf.join("\n")} />
         </blockquote>,
       );
@@ -268,11 +233,7 @@ function Blocks({ src }: { src: string }) {
       /^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)+\|?\s*$/.test(lines[i + 1])
     ) {
       const tbl: string[] = [];
-      while (
-        i < lines.length &&
-        lines[i].includes("|") &&
-        lines[i].trim() !== ""
-      ) {
+      while (i < lines.length && lines[i].includes("|") && lines[i].trim() !== "") {
         tbl.push(lines[i]);
         i++;
       }
@@ -308,7 +269,7 @@ function Blocks({ src }: { src: string }) {
       i++;
     }
     nodes.push(
-      <p key={key()} className="my-2.5 text-[15px] leading-relaxed">
+      <p key={key()} className="my-2.5 leading-relaxed">
         {para.map((l, idx) => (
           <React.Fragment key={idx}>
             {idx > 0 && <br />}

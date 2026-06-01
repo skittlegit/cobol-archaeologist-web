@@ -1,25 +1,11 @@
 /**
- * Typed API client — all calls go directly to the local backend.
- * CORS is open on the backend, so the browser can call it straight.
- * Change the single constant below to point elsewhere.
+ * Typed API client — reads NEXT_PUBLIC_API_URL at runtime.
+ * Falls back to http://localhost:8000 for local development.
  */
 
-export const API_URL = "http://localhost:8000";
+const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
-export interface Confidence {
-  level: "High" | "Medium" | "Low";
-  justification: string;
-}
-
-export interface BusinessIntentCard {
-  logic_block_id: string | null;
-  what: string;
-  why: string;
-  code_evidence: string[];
-  regulation_link: string | null;
-  regulation_sources: string[];
-  confidence: Confidence;
-}
+// ---- shared types -------------------------------------------------------
 
 export interface LogicBlock {
   id: string;
@@ -39,11 +25,19 @@ export interface LogicBlock {
   tags: string[];
 }
 
-export interface PagedCards {
-  total: number;
-  page: number;
-  size: number;
-  items: BusinessIntentCard[];
+export interface Confidence {
+  level: "High" | "Medium" | "Low";
+  justification: string;
+}
+
+export interface BusinessIntentCard {
+  logic_block_id: string | null;
+  what: string;
+  why: string;
+  code_evidence: string[];
+  regulation_link: string | null;
+  regulation_sources: string[];
+  confidence: Confidence;
 }
 
 export interface PagedBlocks {
@@ -51,6 +45,13 @@ export interface PagedBlocks {
   page: number;
   size: number;
   items: LogicBlock[];
+}
+
+export interface PagedCards {
+  total: number;
+  page: number;
+  size: number;
+  items: BusinessIntentCard[];
 }
 
 export interface Stats {
@@ -69,102 +70,69 @@ export interface RegSearchHit {
   score: number;
 }
 
-export interface HealthResp {
-  status?: string;
-  ok?: boolean;
-}
+// ---- helpers -------------------------------------------------------------
 
-export interface ModelStatusResp {
-  path?: string | null;
-  model_path?: string | null;
-  loaded: boolean;
-}
-
-async function j<T>(
+async function apiFetch<T>(
   path: string,
   init?: RequestInit,
-  timeoutMs = 20000,
+  timeoutMs = 15000,
 ): Promise<T> {
-  const r = await fetch(`${API_URL}${path}`, {
+  const res = await fetch(`${BASE}${path}`, {
     ...init,
     headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },
+    // Disable Next.js caching for API calls so data is always fresh
     cache: "no-store",
     signal: AbortSignal.timeout(timeoutMs),
   });
-  if (!r.ok) {
-    const t = await r.text().catch(() => r.statusText);
-    throw new Error(`API ${path} → ${r.status}: ${t}`);
+  if (!res.ok) {
+    const text = await res.text().catch(() => res.statusText);
+    throw new Error(`API ${path} → ${res.status}: ${text}`);
   }
-  return r.json() as Promise<T>;
+  return res.json() as Promise<T>;
 }
 
+// ---- endpoints -----------------------------------------------------------
+
 export const api = {
-  health: () => j<HealthResp>("/health", undefined, 8000),
-  modelStatus: () => j<ModelStatusResp>("/model/status", undefined, 8000),
+  stats: () => apiFetch<Stats>("/stats"),
 
-  stats: () => j<Stats>("/stats"),
-
-  cards: (page = 1, size = 12) =>
-    j<PagedCards>(`/cards?page=${page}&size=${size}`),
-
-  card: (blockId: string) =>
-    j<BusinessIntentCard>(`/cards/${encodeURIComponent(blockId)}`),
-
-  blocks: (p: { page?: number; size?: number; label?: string; q?: string }) => {
+  blocks: (params: {
+    page?: number;
+    size?: number;
+    label?: string;
+    q?: string;
+  }) => {
     const sp = new URLSearchParams();
-    if (p.page) sp.set("page", String(p.page));
-    if (p.size) sp.set("size", String(p.size));
-    if (p.label) sp.set("label", p.label);
-    if (p.q) sp.set("q", p.q);
-    return j<PagedBlocks>(`/blocks?${sp}`);
+    if (params.page) sp.set("page", String(params.page));
+    if (params.size) sp.set("size", String(params.size));
+    if (params.label) sp.set("label", params.label);
+    if (params.q) sp.set("q", params.q);
+    return apiFetch<PagedBlocks>(`/blocks?${sp}`);
   },
 
-  block: (id: string) => j<LogicBlock>(`/blocks/${encodeURIComponent(id)}`),
+  block: (id: string) => apiFetch<LogicBlock>(`/blocks/${encodeURIComponent(id)}`),
 
-  searchRegulations: (q: string, k = 6) =>
-    j<RegSearchHit[]>(
-      `/regulations/search?${new URLSearchParams({ q, k: String(k) })}`,
+  card: (blockId: string) =>
+    apiFetch<BusinessIntentCard>(`/cards/${encodeURIComponent(blockId)}`),
+
+  infer: (blockId: string, backend = "ollama") =>
+    apiFetch<BusinessIntentCard>(`/infer/${encodeURIComponent(blockId)}`, {
+      method: "POST",
+      body: JSON.stringify({ backend }),
+    }),
+
+  searchRegulations: (q: string, k = 5) =>
+    apiFetch<RegSearchHit[]>(
+      `/regulations/search?${new URLSearchParams({ q, k: String(k) })}`
     ),
 
+  // Chat — local model inference can take a while, so allow a long timeout.
   prompt: (prompt: string, maxTokens = 512) =>
-    j<{ response?: string }>(
+    apiFetch<{ response?: string }>(
       "/prompt",
       { method: "POST", body: JSON.stringify({ prompt, max_tokens: maxTokens }) },
       180000,
     ),
-
-  // Inference can take minutes on local hardware — long timeout.
-  analyse: (
-    code: string,
-    opts: { paragraph?: string; backend?: string } = {},
-  ) =>
-    j<BusinessIntentCard>(
-      "/analyse",
-      {
-        method: "POST",
-        body: JSON.stringify({
-          code,
-          paragraph: opts.paragraph || "FREEFORM",
-          backend: opts.backend || "ollama",
-        }),
-      },
-      180000,
-    ),
-
-  infer: (blockId: string, backend = "ollama") =>
-    j<BusinessIntentCard>(
-      `/infer/${encodeURIComponent(blockId)}`,
-      { method: "POST", body: JSON.stringify({ backend }) },
-      180000,
-    ),
 };
 
-/** Turn a raw client error into a short, human message. */
-export function friendlyError(e: unknown): string {
-  const msg = String(e);
-  if (/TimeoutError|timed out|504/.test(msg))
-    return "The model timed out — inference can take a while on local hardware. Try again.";
-  if (/fetch failed|ECONNREFUSED|Failed to fetch|NetworkError/.test(msg))
-    return `Cannot reach the backend at ${API_URL}. Is it running and tunnelled?`;
-  return msg.replace(/^Error:\s*/, "");
-}
+export const API_URL = BASE;

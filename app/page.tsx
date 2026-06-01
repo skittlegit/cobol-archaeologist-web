@@ -1,179 +1,250 @@
-"use client";
-
+import { api, Stats } from "@/lib/api";
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { api, type Stats } from "@/lib/api";
 
-/* TEAM — fill in real details when ready. */
-const TEAM: { name: string; role: string }[] = [
-  { name: "Team Member 1", role: "role — tba" },
-  { name: "Team Member 2", role: "role — tba" },
-  { name: "Team Member 3", role: "role — tba" },
-  { name: "Team Member 4", role: "role — tba" },
-  { name: "Team Member 5", role: "role — tba" },
-];
+const LABEL_META: Record<string, { hue: string; gloss: string }> = {
+  balance_check:          { hue: "#1f3a52", gloss: "Verifies funds before debit." },
+  late_fee:               { hue: "#8a5a00", gloss: "Penalises overdue obligations." },
+  kyc_screening:          { hue: "#5a2a4d", gloss: "Identifies the customer." },
+  interest_calculation:   { hue: "#1f4d3a", gloss: "Accrues time-value of money." },
+  loan_eligibility:       { hue: "#6b4f00", gloss: "Decides who may borrow." },
+  transaction_validation: { hue: "#7a1d1d", gloss: "Guards the ledger from bad input." },
+  fraud_check:            { hue: "#b8593e", gloss: "Flags unusual behaviour." },
+  payroll:                { hue: "#1f5d5a", gloss: "Pays the people." },
+  unlabeled:              { hue: "#a39b8e", gloss: "Awaiting classification." },
+};
 
-const ENTRIES = [
-  ["/chat", "Chat", "Ask the model to read and explain any COBOL in plain language."],
-  ["/cards", "Intent Cards", "Browse recovered business intent for every logic block in the corpus."],
-  ["/analyse", "Analyse", "Paste a paragraph and generate an intent card on the spot."],
-  ["/regulations", "Regulations", "Search the primary regulation the code was written to obey."],
-];
+function meta(l: string) {
+  return LABEL_META[l] ?? { hue: "#6b6557", gloss: "—" };
+}
 
-const PIPELINE = [
-  ["01", "Excavate", "Parse programs; cut paragraphs into self-contained logic blocks — reads, writes, conditions, PERFORM calls."],
-  ["02", "Classify", "Weak-supervision labels per block: balance check, KYC screen, late fee — from variables and copybooks."],
-  ["03", "Interpret", "A local model writes the intent card: what it does, why it exists, a confidence to trust or override."],
-  ["04", "Anchor", "Cross-reference recovered intent against primary regulation via semantic search."],
-];
+async function getStats(): Promise<Stats | null> {
+  try {
+    return await api.stats();
+  } catch {
+    return null;
+  }
+}
 
-export default function HomePage() {
-  const [stats, setStats] = useState<Stats | null>(null);
-
-  useEffect(() => {
-    let off = false;
-    api.stats().then((s) => !off && setStats(s)).catch(() => {});
-    return () => {
-      off = true;
-    };
-  }, []);
-
-  const figures: [string, string][] = [
-    ["logic blocks", stats ? stats.total_blocks.toLocaleString() : "—"],
-    ["intent cards", stats ? stats.total_cards.toLocaleString() : "—"],
-    [
-      "distinct labels",
-      stats ? String(Object.keys(stats.label_distribution).length) : "—",
-    ],
-    [
-      "source files",
-      stats?.top_files?.length ? `${stats.top_files.length}+` : "—",
-    ],
-  ];
+export default async function Home() {
+  const stats = await getStats();
 
   return (
-    <div className="h-full overflow-y-auto">
-      <div className="mx-auto w-full max-w-6xl px-6 py-14 lg:px-10">
-        <div className="rise space-y-24">
-          {/* hero */}
-          <section className="grid gap-12 lg:grid-cols-12">
-            <div className="lg:col-span-8">
-              <p className="eyebrow">An archival research interface</p>
-              <h1 className="font-display mt-6 text-[clamp(2.25rem,5.5vw,3.75rem)] leading-[1.12]">
-                The business intent hidden in legacy code.
-              </h1>
-              <p className="mt-7 max-w-2xl text-base leading-relaxed text-fg-muted">
-                COBOL Archaeologist excavates fifty-year-old banking programs
-                and recovers the rules they encode — balance checks, fee
-                schedules, KYC screens — and links each one back to the
-                regulation it once obeyed.
-              </p>
-              <Link
-                href="/chat"
-                className="mt-9 inline-block border border-fg px-5 py-3 text-sm invert-hover"
-              >
-                Open the chat →
-              </Link>
-            </div>
-            <aside className="space-y-6 border-t border-rule pt-6 text-sm text-fg-muted lg:col-span-4 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0">
-              <div>
-                <p className="eyebrow mb-2">Method</p>
-                <p className="leading-relaxed">
-                  Static parsing → weak labelling → model-assisted intent
-                  inference → regulation anchoring.
-                </p>
-              </div>
-              <div>
-                <p className="eyebrow mb-2">Caution</p>
-                <p className="leading-relaxed">
-                  Inferred intent is a hypothesis, not a specification. Verify
-                  against source and regulation.
-                </p>
-              </div>
-            </aside>
-          </section>
-
-          {/* figures */}
-          <section>
-            <p className="eyebrow mb-8">The corpus</p>
-            <div className="grid grid-cols-2 gap-8 sm:grid-cols-4">
-              {figures.map(([k, v]) => (
-                <div key={k}>
-                  <p className="font-display num text-4xl lg:text-5xl">{v}</p>
-                  <p className="mt-2 text-[13px] text-fg-muted">{k}</p>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          {/* where to begin */}
-          <section>
-            <p className="eyebrow mb-8">Where to begin</p>
-            <div className="grid gap-px border border-rule bg-rule sm:grid-cols-2">
-              {ENTRIES.map(([href, t, d]) => (
-                <Link
-                  key={href}
-                  href={href}
-                  className="group flex flex-col bg-paper p-8 transition-colors hover:bg-surface-2"
-                >
-                  <span className="font-display text-2xl">{t}</span>
-                  <span className="mt-3 flex-1 text-[14px] leading-relaxed text-fg-muted">
-                    {d}
-                  </span>
-                  <span className="mt-6 text-sm text-fg-faint transition-transform group-hover:translate-x-1 group-hover:text-fg">
-                    Enter →
-                  </span>
-                </Link>
-              ))}
-            </div>
-          </section>
-
-          {/* how it works */}
-          <section>
-            <p className="eyebrow mb-8">How a block becomes an intent card</p>
-            <div className="grid gap-x-10 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
-              {PIPELINE.map(([n, t, d]) => (
-                <div key={n} className="border-t-2 border-fg pt-5">
-                  <p className="eyebrow">{n}</p>
-                  <p className="font-display mt-3 text-xl">{t}</p>
-                  <p className="mt-3 text-[13px] leading-relaxed text-fg-muted">
-                    {d}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          {/* team */}
-          <section>
-            <p className="eyebrow mb-8">The team — five people</p>
-            <div className="grid gap-x-10 gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
-              {TEAM.map((m, i) => (
-                <div
-                  key={m.name}
-                  className="flex items-baseline gap-4 border-t border-rule pt-4"
-                >
-                  <span className="num text-[13px] text-fg-faint">
-                    {String(i + 1).padStart(2, "0")}
-                  </span>
-                  <div>
-                    <p className="font-display text-lg">{m.name}</p>
-                    <p className="mt-0.5 text-[13px] text-fg-muted">{m.role}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          {/* footer */}
-          <footer className="border-t border-fg pt-8 text-[13px] text-fg-faint">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <span>COBOL Archaeologist — legacy intent · banking</span>
-              <span>Next.js · FastAPI · local model · vector search</span>
-            </div>
-          </footer>
+    <div className="rise space-y-16">
+      {/* ----- Masthead ----- */}
+      <section className="relative">
+        <div className="flex items-center gap-3 text-ink-3">
+          <span className="eyebrow">A research interface</span>
+          <span className="h-px flex-1 bg-rule" />
+          <span className="eyebrow">Banking · COBOL · Regulation</span>
         </div>
+
+        <h1 className="font-display mt-8 text-[clamp(2.75rem,7vw,5.5rem)] leading-[0.95] font-normal">
+          The business intent<br />
+          <span className="italic text-accent">hidden in legacy code.</span>
+        </h1>
+
+        <div className="mt-8 grid md:grid-cols-12 gap-8 items-start">
+          <p className="md:col-span-7 text-lg text-ink-2 leading-relaxed max-w-2xl">
+            COBOL Archaeologist excavates fifty-year-old banking programs and
+            recovers the rules they encode — the balance checks, the fee
+            schedules, the KYC screens — and links each fragment back to the
+            regulations it once obeyed.
+          </p>
+          <div className="md:col-span-5 md:pl-8 md:border-l border-rule space-y-3 text-sm text-ink-3">
+            <p>
+              <span className="eyebrow block mb-1">Method</span>
+              Static parsing → weak labelling → LLM-assisted intent inference,
+              cross-referenced with primary regulatory sources.
+            </p>
+            <p>
+              <span className="eyebrow block mb-1">Corpus</span>
+              Real-world banking COBOL: ledger postings, interest accrual,
+              KYC screening, payroll, late-fee assessment.
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-10 flex flex-wrap items-center gap-3">
+          <Link
+            href="/blocks"
+            className="group inline-flex items-center gap-3 rounded-sm bg-ink text-paper px-5 py-3 text-sm font-medium hover:bg-accent-ink transition-colors"
+          >
+            <span className="eyebrow text-[10px] text-paper/60">02</span>
+            Browse the catalogue
+            <span className="transition-transform group-hover:translate-x-1">→</span>
+          </Link>
+          <Link
+            href="/search"
+            className="group inline-flex items-center gap-3 rounded-sm border border-ink/20 px-5 py-3 text-sm font-medium hover:border-ink transition-colors"
+          >
+            <span className="eyebrow text-[10px]">03</span>
+            Search regulations
+          </Link>
+        </div>
+      </section>
+
+      {!stats && (
+        <section className="rounded-sm border border-bad/30 bg-[var(--bad-soft)] p-6">
+          <p className="eyebrow text-[var(--bad)] mb-2">Connection error</p>
+          <p className="text-sm text-ink-2">
+            Could not reach the API. Make sure the Python backend is running on{" "}
+            <code className="font-mono px-1.5 py-0.5 rounded bg-card border border-rule">
+              {process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}
+            </code>
+            .
+          </p>
+        </section>
+      )}
+
+      {stats && (
+        <>
+          {/* ----- Ledger figures ----- */}
+          <section>
+            <SectionHeading number="§ 01" title="The corpus, in figures" />
+            <div className="mt-8 grid grid-cols-2 lg:grid-cols-4 border-t border-b border-rule">
+              {[
+                { label: "Logic Blocks",    value: stats.total_blocks, hint: "extracted paragraphs" },
+                { label: "Intent Cards",    value: stats.total_cards,  hint: "what · why · evidence" },
+                {
+                  label: "Labelled Blocks",
+                  value: Object.entries(stats.label_distribution).filter(([k]) => k !== "unlabeled").reduce((s, [, v]) => s + v, 0),
+                  hint: "weak supervision",
+                },
+                { label: "Distinct Labels", value: Object.keys(stats.label_distribution).length, hint: "business categories" },
+              ].map((kpi, i) => (
+                <div
+                  key={kpi.label}
+                  className={`relative px-6 py-7 ${i > 0 ? "lg:border-l border-rule" : ""} ${
+                    i === 1 ? "border-l border-rule lg:border-l" : ""
+                  } ${i >= 2 ? "border-t lg:border-t-0 border-rule" : ""}`}
+                >
+                  <p className="eyebrow">{kpi.label}</p>
+                  <p className="font-display num mt-3 text-5xl lg:text-6xl font-medium leading-none tracking-tight">
+                    {kpi.value.toLocaleString()}
+                  </p>
+                  <p className="mt-3 text-xs text-ink-3">{kpi.hint}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* ----- Distribution + Files ----- */}
+          <section className="grid gap-12 lg:grid-cols-12">
+            <div className="lg:col-span-7">
+              <SectionHeading number="§ 02" title="Distribution by intent" subtitle="Across all logic blocks" />
+              <ul className="mt-8 divide-y divide-rule border-t border-b border-rule">
+                {Object.entries(stats.label_distribution)
+                  .sort(([, a], [, b]) => b - a)
+                  .map(([label, count], i) => {
+                    const pct = (count / stats.total_blocks) * 100;
+                    const m = meta(label);
+                    return (
+                      <li key={label} className="group grid grid-cols-12 items-center gap-4 py-4">
+                        <span className="col-span-1 eyebrow num text-ink-4">
+                          {String(i + 1).padStart(2, "0")}
+                        </span>
+                        <div className="col-span-5 sm:col-span-4">
+                          <p className="font-display text-lg leading-none">
+                            {label.replace(/_/g, " ")}
+                          </p>
+                          <p className="mt-1 text-xs text-ink-3 hidden sm:block">{m.gloss}</p>
+                        </div>
+                        <div className="col-span-4 sm:col-span-5 h-[3px] bg-rule relative overflow-hidden">
+                          <span
+                            className="absolute inset-y-0 left-0 transition-[width] duration-700"
+                            style={{ width: `${pct}%`, background: m.hue }}
+                          />
+                        </div>
+                        <span className="col-span-2 sm:col-span-2 text-right num text-sm">
+                          <span className="font-medium">{count.toLocaleString()}</span>
+                          <span className="text-ink-4 ml-2 text-xs">{pct.toFixed(1)}%</span>
+                        </span>
+                      </li>
+                    );
+                  })}
+              </ul>
+            </div>
+
+            <div className="lg:col-span-5">
+              <SectionHeading number="§ 03" title="Top files in the dig" subtitle="By block density" />
+              <ol className="mt-8 space-y-1">
+                {stats.top_files.map((f, i) => (
+                  <li
+                    key={f.file}
+                    className="group flex items-baseline gap-4 py-3 border-b border-dashed border-rule hover:border-ink-3 transition-colors"
+                  >
+                    <span className="eyebrow num text-ink-4 w-8 shrink-0">
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
+                    <span className="font-mono text-sm flex-1 truncate text-ink-2 group-hover:text-ink">
+                      {f.file.split(/[/\\]/).slice(-1)[0]}
+                    </span>
+                    <span className="num text-sm tabular-nums text-ink-3">
+                      <span className="text-ink font-medium">{f.count}</span>
+                      <span className="ml-1.5 text-ink-4">blocks</span>
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          </section>
+
+          {/* ----- Pull quote ----- */}
+          <section className="relative py-12 px-2 sm:px-12 border-y border-rule">
+            <span aria-hidden className="absolute -top-4 left-4 font-display text-[10rem] leading-none text-accent/20 select-none">“</span>
+            <blockquote className="font-display text-2xl md:text-[2rem] leading-snug max-w-3xl text-ink-2 relative">
+              Every <em>IF</em> in a fifty-year-old paragraph was once a
+              regulatory clause, a customer complaint, or a midnight patch
+              someone signed off on a fax.
+            </blockquote>
+            <p className="eyebrow mt-6">— Editorial note</p>
+          </section>
+
+          {/* ----- Method ----- */}
+          <section>
+            <SectionHeading number="§ 04" title="How a block becomes an intent card" />
+            <ol className="mt-8 grid gap-6 md:grid-cols-3">
+              {[
+                { n: "i.",   t: "Excavate", d: "Parse the program. Cut paragraphs into self-contained logic blocks. Record reads, writes, conditions, performs." },
+                { n: "ii.",  t: "Classify", d: "Apply weakly-supervised labels — balance check, KYC screen, late fee — based on variables, conditions, and copybooks." },
+                { n: "iii.", t: "Interpret", d: "Generate an intent card: the what, the why, the regulatory anchor — with a confidence the analyst can trust or override." },
+              ].map((s) => (
+                <li key={s.t} className="border-t border-ink pt-5">
+                  <span className="eyebrow">{s.n}</span>
+                  <h3 className="font-display text-2xl mt-2">{s.t}</h3>
+                  <p className="text-sm text-ink-2 mt-3 leading-relaxed">{s.d}</p>
+                </li>
+              ))}
+            </ol>
+          </section>
+        </>
+      )}
+    </div>
+  );
+}
+
+function SectionHeading({
+  number,
+  title,
+  subtitle,
+}: {
+  number: string;
+  title: string;
+  subtitle?: string;
+}) {
+  return (
+    <div className="flex items-end justify-between gap-4 border-b border-ink pb-3">
+      <div>
+        <p className="eyebrow">{number}</p>
+        <h2 className="font-display mt-1 text-3xl md:text-4xl leading-none">
+          {title}
+        </h2>
       </div>
+      {subtitle && (
+        <p className="hidden sm:block text-sm text-ink-3 italic font-display">
+          {subtitle}
+        </p>
+      )}
     </div>
   );
 }
