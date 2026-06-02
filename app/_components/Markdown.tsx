@@ -30,7 +30,7 @@ function inline(text: string): React.ReactNode {
     take(/`([^`]+)`/.exec(rest), (m) => (
       <code
         key={key()}
-        className="rounded-sm border border-rule bg-paper-2 px-1.5 py-0.5 font-mono text-[0.85em] text-accent-ink"
+        className="rounded-md border border-rule bg-paper-2 px-1.5 py-0.5 font-mono text-[0.85em] text-accent-ink"
       >
         {m[1]}
       </code>
@@ -74,7 +74,7 @@ function inline(text: string): React.ReactNode {
 function CodeBlock({ code, lang }: { code: string; lang: string }) {
   const [copied, setCopied] = useState(false);
   return (
-    <div className="my-3.5 overflow-hidden rounded-sm border border-rule bg-paper-2">
+    <div className="my-3.5 overflow-hidden rounded-xl border border-rule bg-paper-2">
       <div className="flex items-center justify-between border-b border-rule px-3.5 py-2">
         <span className="eyebrow text-[10px]">{lang || "code"}</span>
         <button

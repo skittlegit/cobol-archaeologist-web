@@ -52,7 +52,7 @@ export default async function BlockDetailPage({ params }: Props) {
         <Link href="/blocks" className="eyebrow link inline-flex items-center gap-2">
           ← Back to catalogue
         </Link>
-        <div className="rounded-sm border border-bad/30 bg-[var(--bad-soft)] p-6">
+        <div className="card p-6">
           <p className="eyebrow text-[var(--bad)] mb-2">Block not found</p>
           <p className="text-sm text-ink-2">{blockError}</p>
         </div>
@@ -87,7 +87,7 @@ export default async function BlockDetailPage({ params }: Props) {
       </div>
 
       {/* Title block */}
-      <header className="grid lg:grid-cols-12 gap-8 border-b border-ink pb-10">
+      <header className="grid lg:grid-cols-12 gap-8 border-b border-rule-strong pb-10">
         <div className="lg:col-span-8">
           <p className="eyebrow">Folio · {block.id.slice(0, 8)}</p>
           <h1 className="font-display mt-3 text-5xl md:text-6xl leading-[0.95] break-words">
@@ -106,14 +106,14 @@ export default async function BlockDetailPage({ params }: Props) {
           )}
         </div>
 
-        <dl className="lg:col-span-4 grid grid-cols-2 gap-px bg-rule self-end">
+        <dl className="lg:col-span-4 grid grid-cols-2 gap-3 self-end">
           {[
             { k: "Source",    v: filePath, mono: true },
             { k: "Lines",     v: `${block.start_line}–${block.end_line}`, mono: true },
             { k: "Length",    v: `${lineCount} ln`, mono: false },
             { k: "Tags",      v: block.tags.length ? block.tags.length : "—" },
           ].map((m) => (
-            <div key={m.k} className="bg-paper p-4">
+            <div key={m.k} className="card p-4">
               <dt className="eyebrow">{m.k}</dt>
               <dd className={`mt-1.5 text-sm truncate ${m.mono ? "font-mono" : "num"}`}>
                 {m.v}
@@ -127,7 +127,7 @@ export default async function BlockDetailPage({ params }: Props) {
       <div className="grid gap-12 lg:grid-cols-12">
         {/* COBOL source */}
         <section className="lg:col-span-7 space-y-4">
-          <div className="flex items-end justify-between border-b border-ink pb-3">
+          <div className="flex items-end justify-between border-b border-rule-strong pb-3">
             <div>
               <p className="eyebrow">§ A</p>
               <h2 className="font-display text-2xl mt-1">The source</h2>
@@ -135,7 +135,7 @@ export default async function BlockDetailPage({ params }: Props) {
             <p className="eyebrow">{lineCount} lines · COBOL</p>
           </div>
 
-          <div className="rounded-sm border border-rule bg-card overflow-hidden">
+          <div className="card overflow-hidden">
             <div className="flex items-center gap-2 border-b border-rule px-4 py-2.5 bg-paper-2/60">
               <span className="h-2 w-2 rounded-full bg-[var(--bad)]" />
               <span className="h-2 w-2 rounded-full bg-[var(--warn)]" />
@@ -155,7 +155,7 @@ export default async function BlockDetailPage({ params }: Props) {
 
         {/* Intent card */}
         <aside className="lg:col-span-5 space-y-4">
-          <div className="flex items-end justify-between border-b border-ink pb-3">
+          <div className="flex items-end justify-between border-b border-rule-strong pb-3">
             <div>
               <p className="eyebrow">§ B</p>
               <h2 className="font-display text-2xl mt-1">Intent card</h2>
@@ -164,7 +164,7 @@ export default async function BlockDetailPage({ params }: Props) {
           </div>
 
           {!card && cardError && (
-            <div className="rounded-sm border border-rule bg-card p-6 text-center">
+            <div className="card p-6 text-center">
               <p className="font-display text-xl text-ink-3 italic">No card yet.</p>
               <p className="text-xs text-ink-4 mt-2">
                 Use <span className="font-mono">Generate</span> to draft one with the LLM.
@@ -173,7 +173,7 @@ export default async function BlockDetailPage({ params }: Props) {
           )}
 
           {card && (
-            <div className="rounded-sm border border-ink bg-card overflow-hidden">
+            <div className="card overflow-hidden">
               <div className="border-b border-rule px-5 py-4 bg-paper-2/40 flex items-center justify-between">
                 <p className="eyebrow">Inferred intent</p>
                 {(() => {
@@ -228,10 +228,7 @@ export default async function BlockDetailPage({ params }: Props) {
                     {card.regulation_sources.length > 0 && (
                       <div className="flex flex-wrap gap-1.5">
                         {card.regulation_sources.map((s) => (
-                          <span
-                            key={s}
-                            className="rounded-sm border border-accent/30 bg-accent-soft text-accent-ink px-2 py-0.5 text-[11px]"
-                          >
+                          <span key={s} className="chip chip-accent">
                             {s}
                           </span>
                         ))}
@@ -255,7 +252,7 @@ export default async function BlockDetailPage({ params }: Props) {
       {/* Static analysis grid */}
       {sections.length > 0 && (
         <section className="space-y-6">
-          <div className="flex items-end justify-between border-b border-ink pb-3">
+          <div className="flex items-end justify-between border-b border-rule-strong pb-3">
             <div>
               <p className="eyebrow">§ C</p>
               <h2 className="font-display text-2xl mt-1">Static analysis</h2>
@@ -263,9 +260,9 @@ export default async function BlockDetailPage({ params }: Props) {
             <p className="hidden sm:block eyebrow">Extracted from the parser</p>
           </div>
 
-          <div className="grid gap-px bg-rule sm:grid-cols-2 lg:grid-cols-3 border border-rule">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {sections.map((s) => (
-              <div key={s.label} className="bg-paper p-5">
+              <div key={s.label} className="card p-5">
                 <div className="flex items-baseline justify-between mb-3">
                   <p className="eyebrow">{s.label}</p>
                   <p className="num text-xs text-ink-4">{s.items.length}</p>

@@ -12,11 +12,24 @@ interface Message {
 }
 
 const EXAMPLES = [
-  "explain what a COBOL paragraph does in plain English",
-  "what business rules might a late-fee routine encode?",
-  "summarise the risks of an undocumented banking system",
-  "what is a COMMAREA and why does it matter?",
+  { t: "Explain a paragraph", q: "Explain what a COBOL paragraph does in plain English." },
+  { t: "Recover intent", q: "What business rules might a late-fee routine encode?" },
+  { t: "Assess risk", q: "Summarise the risks of running an undocumented banking system." },
+  { t: "Learn the jargon", q: "What is a COMMAREA in CICS, and why does it matter?" },
 ];
+
+function Avatar() {
+  return (
+    <span
+      aria-hidden
+      className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-accent text-paper shadow-soft-sm"
+    >
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <path d="M2 5h12M3.4 8h9.2M4.8 11h6.4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      </svg>
+    </span>
+  );
+}
 
 export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -35,7 +48,7 @@ export default function ChatPage() {
     const ta = taRef.current;
     if (!ta) return;
     ta.style.height = "0px";
-    ta.style.height = Math.min(ta.scrollHeight, 200) + "px";
+    ta.style.height = Math.min(ta.scrollHeight, 220) + "px";
   }, [input]);
 
   const empty = messages.length === 0 && !sending;
@@ -80,126 +93,106 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="rise space-y-12">
-      {/* Header */}
-      <header className="grid items-end gap-6 border-b border-ink pb-6 lg:grid-cols-12">
-        <div className="lg:col-span-8">
-          <p className="eyebrow">§ 04 · The conversation</p>
-          <h1 className="font-display mt-2 text-5xl leading-none md:text-6xl">Chat</h1>
-          <p className="mt-4 max-w-xl text-ink-2">
-            A direct line to a locally-hosted model that reads{" "}
-            <em className="font-display">fifty-year-old banking COBOL</em> —
-            explaining paragraphs and surfacing the rules they encode, in plain
-            English.
-          </p>
-        </div>
-        <div className="space-y-1 lg:col-span-4 lg:text-right">
-          <p className="eyebrow">Model</p>
-          <p className="font-display text-2xl">Local · GGUF</p>
-          <p className="num text-xs text-ink-3">on-prem inference</p>
-        </div>
-      </header>
+    <div className="flex min-h-[60vh] flex-col">
+      {/* ---------------- conversation ---------------- */}
+      <div className="flex-1">
+        {empty ? (
+          <div className="flex min-h-[52vh] flex-col items-center justify-center text-center">
+            <h1 className="font-display text-4xl leading-tight md:text-5xl">
+              What would you like to <span className="italic text-accent">understand</span>?
+            </h1>
+            <p className="mt-4 max-w-md text-ink-2">
+              Ask a locally-hosted model about any COBOL paragraph, banking rule,
+              or legacy routine.
+            </p>
 
-      {/* Conversation */}
-      {empty ? (
-        <section className="space-y-8">
-          <div className="grid gap-5 md:grid-cols-3">
-            {[
-              { t: "Explain legacy code", d: "Turn dense COBOL paragraphs into clear, plain-language summaries." },
-              { t: "Recover business intent", d: "Surface the rules — balance checks, fees, KYC — hidden in the logic." },
-              { t: "Draft documentation", d: "Generate readable notes, with formatted code and structured sections." },
-            ].map((c) => (
-              <div key={c.t} className="border-t border-ink pt-4">
-                <p className="font-display text-xl">{c.t}</p>
-                <p className="mt-2 leading-relaxed text-ink-2">{c.d}</p>
-              </div>
-            ))}
+            <div className="mt-9 grid w-full max-w-2xl gap-3 sm:grid-cols-2">
+              {EXAMPLES.map((ex) => (
+                <button
+                  key={ex.t}
+                  onClick={() => send(ex.q)}
+                  className="card card-hover group p-4 text-left"
+                >
+                  <p className="font-display text-lg leading-tight">{ex.t}</p>
+                  <p className="mt-1.5 text-[13px] leading-relaxed text-ink-3 group-hover:text-ink-2">
+                    {ex.q}
+                  </p>
+                </button>
+              ))}
+            </div>
           </div>
-
-          <div className="flex flex-wrap items-center gap-2 text-xs">
-            <span className="eyebrow mr-1">Try</span>
-            {EXAMPLES.map((ex) => (
-              <button
-                key={ex}
-                onClick={() => send(ex)}
-                className="rounded-full border border-rule-strong px-3 py-1 font-display italic text-ink-2 transition-colors hover:border-ink hover:text-ink"
-              >
-                {ex}
-              </button>
-            ))}
-          </div>
-        </section>
-      ) : (
-        <section className="space-y-8" aria-live="polite">
-          {messages.map((m) =>
-            m.role === "user" ? (
-              <article key={m.id} className="grid gap-4 lg:grid-cols-12">
-                <aside className="lg:col-span-3">
-                  <p className="eyebrow">You asked</p>
-                </aside>
-                <div className="lg:col-span-9">
-                  <p className="font-display text-2xl leading-snug">{m.text}</p>
+        ) : (
+          <div className="space-y-7 pb-6 pt-2" aria-live="polite">
+            {messages.map((m) =>
+              m.role === "user" ? (
+                <div key={m.id} className="flex justify-end">
+                  <div className="max-w-[80%] rounded-2xl rounded-br-md bg-accent-soft px-4 py-2.5 text-[15px] leading-relaxed text-ink">
+                    <span className="whitespace-pre-wrap">{m.text}</span>
+                  </div>
                 </div>
-              </article>
-            ) : (
-              <article key={m.id} className="grid gap-4 border-t border-rule pt-8 lg:grid-cols-12">
-                <aside className="lg:col-span-3">
-                  <p className="eyebrow">COBOL Archaeologist</p>
-                </aside>
-                <div className="lg:col-span-9 text-ink-2">
-                  <Markdown content={m.text} />
+              ) : (
+                <div key={m.id} className="flex gap-3.5">
+                  <Avatar />
+                  <div className="min-w-0 flex-1 pt-0.5 text-[15px] text-ink-2">
+                    <Markdown content={m.text} />
+                  </div>
                 </div>
-              </article>
-            ),
-          )}
-          {sending && (
-            <article className="grid gap-4 border-t border-rule pt-8 lg:grid-cols-12">
-              <aside className="lg:col-span-3">
-                <p className="eyebrow">COBOL Archaeologist</p>
-              </aside>
-              <div className="lg:col-span-9">
-                <p className="font-display text-xl italic text-ink-3">Reading the code…</p>
+              ),
+            )}
+            {sending && (
+              <div className="flex gap-3.5">
+                <Avatar />
+                <div className="typing flex items-center gap-1.5 pt-3" aria-label="Thinking">
+                  <span />
+                  <span />
+                  <span />
+                </div>
               </div>
-            </article>
-          )}
-          <div ref={endRef} />
-        </section>
-      )}
+            )}
+            <div ref={endRef} />
+          </div>
+        )}
+      </div>
 
-      {/* Composer */}
-      <section className="sticky bottom-6 z-10">
+      {/* ---------------- composer ---------------- */}
+      <div className="sticky bottom-0 pt-3">
+        <div className="composer-fade pointer-events-none absolute inset-x-0 -top-8 h-8" />
         <form
           onSubmit={(e) => {
             e.preventDefault();
             send();
           }}
-          className="flex flex-col gap-3 border border-ink/15 bg-card/90 p-3 backdrop-blur-md sm:flex-row sm:items-end"
+          className="flex items-end gap-2 rounded-[1.6rem] border border-rule-strong bg-card p-2 pl-5 shadow-soft transition-colors focus-within:border-accent focus-within:shadow-[0_0_0_3px_var(--accent-soft)]"
         >
-          <div className="relative flex-1">
-            <span className="eyebrow pointer-events-none absolute left-4 top-4">Q.</span>
-            <textarea
-              ref={taRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={onKeyDown}
-              rows={1}
-              placeholder="Ask the archive…"
-              aria-label="Message"
-              className="max-h-[200px] w-full resize-none bg-transparent py-3 pl-12 pr-2 font-display text-lg placeholder:italic placeholder:text-ink-4 focus:outline-none"
-            />
-          </div>
+          <textarea
+            ref={taRef}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={onKeyDown}
+            rows={1}
+            placeholder="Message COBOL Archaeologist…"
+            aria-label="Message"
+            className="max-h-[220px] flex-1 resize-none bg-transparent py-2.5 text-[15px] leading-relaxed placeholder:text-ink-4 focus:outline-none"
+          />
           <button
             type="submit"
             disabled={sending || !input.trim()}
-            className="rounded-sm bg-ink px-7 py-3.5 text-sm font-medium text-paper transition-colors hover:bg-accent-ink disabled:opacity-40"
+            aria-label="Send message"
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-accent text-paper transition-all hover:bg-accent-ink active:scale-95 disabled:opacity-30 disabled:hover:bg-accent"
           >
-            {sending ? "Sending…" : "Send"}
+            {sending ? (
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+            ) : (
+              <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
+                <path d="M8 13V3M8 3L4 7M8 3l4 4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            )}
           </button>
         </form>
-        <p className="mt-2 text-center text-[11px] text-ink-4">
+        <p className="bg-paper pb-2 pt-2 text-center text-[11px] text-ink-4">
           Enter to send · Shift+Enter for a new line · responses may be inaccurate
         </p>
-      </section>
+      </div>
     </div>
   );
 }

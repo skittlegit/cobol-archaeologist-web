@@ -2,6 +2,7 @@
 
 import { api, RegSearchHit } from "@/lib/api";
 import { useState } from "react";
+import { IconSearch } from "../_components/icons";
 
 const SUGGESTIONS = [
   "customer due diligence",
@@ -38,9 +39,9 @@ export default function SearchPage() {
   return (
     <div className="rise space-y-12">
       {/* Header */}
-      <header className="grid lg:grid-cols-12 gap-6 items-end border-b border-ink pb-6">
+      <header className="grid lg:grid-cols-12 gap-6 items-end border-b border-rule-strong pb-6">
         <div className="lg:col-span-8">
-          <p className="eyebrow">§ 03 · The references</p>
+          <p className="eyebrow">The references</p>
           <h1 className="font-display mt-2 text-5xl md:text-6xl leading-none">
             Regulation Search
           </h1>
@@ -77,14 +78,15 @@ export default function SearchPage() {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Ask the archive…"
-                className="w-full rounded-sm border border-ink/15 bg-card pl-14 pr-4 py-4 text-lg font-display placeholder:text-ink-4 placeholder:italic focus:outline-none focus:border-ink focus:ring-2 focus:ring-accent/30 transition"
+                className="field pl-14 py-4 text-lg font-display placeholder:italic"
               />
             </div>
             <button
               type="submit"
               disabled={loading || !query.trim()}
-              className="rounded-sm bg-ink text-paper px-7 py-4 text-sm font-medium hover:bg-accent-ink disabled:opacity-40 transition-colors"
+              className="btn btn-primary btn-lg"
             >
+              <IconSearch className="h-[18px] w-[18px]" />
               {loading ? "Searching…" : "Search"}
             </button>
           </div>
@@ -96,7 +98,7 @@ export default function SearchPage() {
             <button
               key={s}
               onClick={() => runSearch(s)}
-              className="italic font-display rounded-full px-3 py-1 border border-rule-strong text-ink-2 hover:border-ink hover:text-ink transition-colors"
+              className="italic font-display rounded-full px-3 py-1.5 border border-rule-strong text-ink-2 hover:border-ink-3 hover:text-ink transition-colors"
             >
               {s}
             </button>
@@ -105,7 +107,7 @@ export default function SearchPage() {
       </section>
 
       {error && (
-        <div className="rounded-sm border border-bad/30 bg-[var(--bad-soft)] p-4 text-sm text-ink-2">
+        <div className="card p-4 text-sm text-ink-2">
           <span className="eyebrow text-[var(--bad)] mr-2">Error</span> {error}
         </div>
       )}
@@ -120,17 +122,17 @@ export default function SearchPage() {
 
       {results && results.length > 0 && (
         <section className="space-y-1">
-          <div className="flex items-end justify-between border-b border-ink pb-3">
+          <div className="flex items-end justify-between border-b border-rule-strong pb-3">
             <p className="eyebrow">
               {results.length} passages · for &ldquo;{searched}&rdquo;
             </p>
             <p className="hidden sm:block eyebrow">Ranked by relevance</p>
           </div>
-          <ol className="divide-y divide-rule">
+          <ol className="space-y-4 pt-2">
             {results.map((hit, i) => {
               const score = Math.max(0, Math.min(1, hit.score));
               return (
-                <li key={hit.chunk_id} className="py-6 grid lg:grid-cols-12 gap-6">
+                <li key={hit.chunk_id} className="card card-hover grid gap-6 p-6 lg:grid-cols-12">
                   <aside className="lg:col-span-3 space-y-3">
                     <div className="flex items-baseline gap-3">
                       <span className="font-display num text-4xl text-accent leading-none">
@@ -153,9 +155,9 @@ export default function SearchPage() {
                         <span className="eyebrow">Relevance</span>
                         <span className="num text-ink-2">{score.toFixed(3)}</span>
                       </div>
-                      <div className="h-[2px] bg-rule overflow-hidden">
+                      <div className="h-2 overflow-hidden rounded-full bg-paper-2">
                         <div
-                          className="h-full bg-accent"
+                          className="h-full rounded-full bg-accent"
                           style={{ width: `${score * 100}%` }}
                         />
                       </div>
@@ -182,13 +184,13 @@ export default function SearchPage() {
       )}
 
       {!results && !loading && (
-        <section className="border-t border-rule pt-10 grid md:grid-cols-3 gap-8 text-sm">
+        <section className="grid gap-4 pt-4 text-sm md:grid-cols-3">
           {[
             { t: "Plain English", d: "No SQL, no operators. Describe the rule, the screen, or the threshold you're after." },
             { t: "Cited results",  d: "Each hit returns its source document, section, and page — ready to link from an intent card." },
             { t: "Relevance-ranked", d: "Cosine similarity over a sentence-embedding index. Top eight passages, every time." },
           ].map((f) => (
-            <div key={f.t} className="border-t border-ink pt-4">
+            <div key={f.t} className="card p-5">
               <p className="font-display text-xl">{f.t}</p>
               <p className="text-ink-2 mt-2 leading-relaxed">{f.d}</p>
             </div>

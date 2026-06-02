@@ -29,7 +29,7 @@ export default function InferButton({ blockId }: { blockId: string }) {
       <button
         onClick={handleInfer}
         disabled={loading}
-        className="group inline-flex items-center gap-2 rounded-sm border border-ink/20 px-3 py-1.5 text-xs font-medium hover:bg-ink hover:text-paper hover:border-ink disabled:opacity-50 disabled:cursor-wait transition-colors"
+        className="group inline-flex items-center gap-2 rounded-lg border border-rule-strong bg-card px-3.5 py-2 text-xs font-medium hover:bg-ink hover:text-paper hover:border-ink disabled:opacity-50 disabled:cursor-wait transition-colors"
       >
         <span
           className={`h-1.5 w-1.5 rounded-full ${

@@ -2,6 +2,7 @@
 
 import { api, PagedBlocks } from "@/lib/api";
 import Link from "next/link";
+import { IconSearch } from "../_components/icons";
 import { useEffect, useState, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -62,6 +63,7 @@ function BlocksContent() {
   }, [page, q, label]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     load();
   }, [load]);
 
@@ -95,9 +97,9 @@ function BlocksContent() {
   return (
     <div className="rise space-y-10">
       {/* Header */}
-      <header className="grid lg:grid-cols-12 gap-6 items-end border-b border-ink pb-6">
+      <header className="grid lg:grid-cols-12 gap-6 items-end border-b border-rule-strong pb-6">
         <div className="lg:col-span-7">
-          <p className="eyebrow">§ 02 · The catalogue</p>
+          <p className="eyebrow">The catalogue</p>
           <h1 className="font-display mt-2 text-5xl md:text-6xl leading-none">
             Logic Blocks
           </h1>
@@ -127,13 +129,11 @@ function BlocksContent() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="paragraph name, code fragment, variable…"
-              className="w-full rounded-sm border border-ink/15 bg-card pl-16 pr-4 py-3 text-sm placeholder:text-ink-4 focus:outline-none focus:border-ink focus:ring-2 focus:ring-accent/30 transition"
+              className="field pl-16 text-sm"
             />
           </div>
-          <button
-            type="submit"
-            className="rounded-sm bg-ink text-paper px-6 py-3 text-sm font-medium hover:bg-accent-ink transition-colors"
-          >
+          <button type="submit" className="btn btn-primary btn-lg">
+            <IconSearch className="h-[18px] w-[18px]" />
             Search
           </button>
         </form>
@@ -142,10 +142,10 @@ function BlocksContent() {
           <span className="eyebrow mr-2">Filter by intent</span>
           <button
             onClick={() => setLabel("")}
-            className={`rounded-full px-3 py-1 border transition-colors ${
+            className={`rounded-full px-3 py-1.5 border transition-colors ${
               !label
                 ? "bg-ink text-paper border-ink"
-                : "border-rule-strong text-ink-2 hover:border-ink"
+                : "border-rule-strong text-ink-2 hover:border-ink-3 hover:text-ink"
             }`}
           >
             All
@@ -161,7 +161,7 @@ function BlocksContent() {
                     ? { background: LABEL_HUE[l], color: "var(--paper)", borderColor: LABEL_HUE[l] }
                     : { borderColor: "var(--rule-strong)" }
                 }
-                className="rounded-full px-3 py-1 border text-ink-2 hover:border-ink transition-colors"
+                className="rounded-full px-3 py-1.5 border text-ink-2 hover:border-ink-3 hover:text-ink transition-colors"
               >
                 {l.replace(/_/g, " ")}
               </button>
@@ -171,7 +171,7 @@ function BlocksContent() {
       </section>
 
       {error && (
-        <div className="rounded-sm border border-bad/30 bg-[var(--bad-soft)] p-4 text-sm text-ink-2">
+        <div className="card p-4 text-sm text-ink-2">
           <span className="eyebrow text-[var(--bad)] mr-2">Error</span> {error}
         </div>
       )}
@@ -179,16 +179,16 @@ function BlocksContent() {
       {/* Table */}
       <section>
         {loading && !data && (
-          <ul className="space-y-px">
+          <ul className="space-y-2">
             {Array.from({ length: 8 }).map((_, i) => (
-              <li key={i} className="h-14 shimmer rounded-sm" />
+              <li key={i} className="h-14 shimmer rounded-xl" />
             ))}
           </ul>
         )}
 
         {data && (
-          <div>
-            <div className="hidden md:grid grid-cols-12 gap-4 px-2 pb-3 border-b border-ink eyebrow">
+          <div className="card px-3 py-2 sm:px-5">
+            <div className="hidden md:grid grid-cols-12 gap-4 px-2 pb-3 border-b border-rule-strong eyebrow">
               <span className="col-span-1">№</span>
               <span className="col-span-4">Paragraph</span>
               <span className="col-span-4">Source file</span>
@@ -264,14 +264,14 @@ function BlocksContent() {
             <button
               onClick={() => goPage(page - 1)}
               disabled={page <= 1}
-              className="rounded-sm border border-ink/20 px-4 py-2 text-sm hover:bg-ink hover:text-paper disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-ink transition-colors"
+              className="btn btn-secondary"
             >
               ← Previous
             </button>
             <button
               onClick={() => goPage(page + 1)}
               disabled={page >= totalPages}
-              className="rounded-sm border border-ink/20 px-4 py-2 text-sm hover:bg-ink hover:text-paper disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-ink transition-colors"
+              className="btn btn-secondary"
             >
               Next →
             </button>
@@ -287,8 +287,8 @@ export default function BlocksPage() {
     <Suspense
       fallback={
         <div className="space-y-3">
-          <div className="h-12 w-64 shimmer rounded-sm" />
-          <div className="h-4 w-96 shimmer rounded-sm" />
+          <div className="h-12 w-64 shimmer rounded-xl" />
+          <div className="h-4 w-96 shimmer rounded-lg" />
         </div>
       }
     >

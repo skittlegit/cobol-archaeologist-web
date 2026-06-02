@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
-import { Source_Serif_4, Manrope, JetBrains_Mono } from "next/font/google";
+import { Fraunces, Manrope, JetBrains_Mono } from "next/font/google";
 import Link from "next/link";
 import "./globals.css";
+import { SiteNav } from "./_components/SiteNav";
 
-const sourceSerif = Source_Serif_4({
-  variable: "--font-source-serif",
+const fraunces = Fraunces({
+  variable: "--font-fraunces",
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
+  weight: ["400", "500", "600", "700"],
   style: ["normal", "italic"],
   display: "swap",
 });
@@ -39,45 +40,18 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${sourceSerif.variable} ${manrope.variable} ${jetbrainsMono.variable} h-full`}
+      className={`${fraunces.variable} ${manrope.variable} ${jetbrainsMono.variable} h-full`}
     >
       <body className="min-h-full flex flex-col">
         <header className="sticky top-0 z-20 border-b border-rule bg-paper/85 backdrop-blur-md">
           <div className="mx-auto max-w-7xl px-6 lg:px-10 h-16 flex items-center justify-between gap-8">
-            <Link href="/" className="group flex items-center gap-3">
-              <span
-                aria-hidden
-                className="grid h-8 w-8 place-items-center rounded-sm bg-ink text-paper font-display text-[15px] leading-none transition-transform group-hover:scale-105"
-              >
-                CA
-              </span>
-              <span className="flex flex-col leading-none">
-                <span className="font-display text-[15px] font-medium tracking-tight">
-                  COBOL Archaeologist
-                </span>
-                <span className="eyebrow mt-1 text-[10px]">Legacy Intent · Banking</span>
+            <Link href="/" className="group">
+              <span className="font-display text-[1.4rem] font-semibold tracking-[-0.02em] text-ink transition-colors group-hover:text-accent">
+                COBOL Archaeologist
               </span>
             </Link>
 
-            <nav className="hidden md:flex items-center gap-1 text-sm">
-              {[
-                { href: "/", label: "Overview", n: "01" },
-                { href: "/blocks", label: "Logic Blocks", n: "02" },
-                { href: "/search", label: "Regulations", n: "03" },
-                { href: "/chat", label: "Chat", n: "04" },
-              ].map((l) => (
-                <Link
-                  key={l.href}
-                  href={l.href}
-                  className="group flex items-baseline gap-2 rounded-md px-3 py-2 text-ink-2 hover:text-ink transition-colors"
-                >
-                  <span className="eyebrow text-[10px] text-ink-4 group-hover:text-accent transition-colors">
-                    {l.n}
-                  </span>
-                  <span>{l.label}</span>
-                </Link>
-              ))}
-            </nav>
+            <SiteNav />
 
             <div className="hidden lg:flex items-center gap-2 text-xs text-ink-3">
               <span className="relative flex h-2 w-2">
